@@ -34,7 +34,8 @@ function mailsystem_admin_settings() {
   $form['mailsystem'] = array(
     '#type' => 'fieldset',
     '#title' => t('Mail System Settings'),
-    '#description' => t('Drupal provides a default <a href="!interface"><code>@interface</code></a> class called <a href="!default_class"><code>@default_class</code></a>. Modules may provide additional classes. Each <a href="!interface"><code>@interface</code></a> class may be associated with one or more identifiers, composed of a %module and an optional %key. Each email being sent also has a %module and a %key. To decide which class to use, Drupal uses the following search order: <ol><li>The class associated with the %module and %key, if any.</li><li>The class associated with the %module, if any.</li><li>The site-wide default <a href="!interface"><code>@interface</code></a> class.</li></ol>', $args
+    '#description' => t(
+      'Drupal provides a default <a href="!interface"><code>@interface</code></a> class called <a href="!default_class"><code>@default_class</code></a>. Modules may provide additional classes. Each <a href="!interface"><code>@interface</code></a> class may be associated with one or more identifiers, composed of a %module and an optional %key. Each email being sent also has a %module and a %key. To decide which class to use, Drupal uses the following search order: <ol><li>The class associated with the %module and %key, if any.</li><li>The class associated with the %module, if any.</li><li>The site-wide default <a href="!interface"><code>@interface</code></a> class.</li></ol>', $args
     ),
     '#collapsible' => FALSE,
     '#tree' => TRUE,
@@ -147,7 +148,6 @@ function mailsystem_admin_settings_submit($form, &$form_state) {
     }
   }
   unset($form_state['values']['mailsystem']);
-
   if ($form_state['values']['class']['format'] === mailsystem_default_id()) {
     unset($form_state['values']['class']['format']);
   }
@@ -165,7 +165,7 @@ function mailsystem_admin_settings_submit($form, &$form_state) {
     if (!empty($form_state['values']['identifier']['key'])) {
       $id .= '_' . $form_state['values']['identifier']['key'];
     }
-    $mail_system[$id] = $new_clas;
+    $mail_system[$id] = $new_class;
   }
   unset($form_state['values']['identifier']);
   variable_set('mail_system', $mail_system);

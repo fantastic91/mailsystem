@@ -88,9 +88,9 @@ To change the site-wide defaults to use the `FooMailSystem` for formatting messa
 
     mailsystem_set(
       array(
-        mailsystem_default_id() => array(
-          'format' => 'FooMailSystem',
-          'mail' => 'BarMailSystem',
+        mailsystem_default_id() =\> array(
+          'format' =\> 'FooMailSystem',
+          'mail' =\> 'BarMailSystem',
         ),
       )
     );
@@ -99,8 +99,8 @@ To change the site-wide defaults to use the `FooMailSystem` for sending messages
 
     mailsystem_set(
       array(
-        mailsystem_default_id() => array(
-          'mail' => 'FooMailsystem',
+        mailsystem_default_id() =\> array(
+          'mail' =\> 'FooMailsystem',
         ),
       )
     );
