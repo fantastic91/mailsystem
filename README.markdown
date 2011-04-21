@@ -1,7 +1,7 @@
 # [Mail System](http://drupal.org/project/mailsystem)
 
 Provides an Administrative UI and Developers API for safely updating the
-[mail_system](http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/7)
+[mail_system](http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8)
 configuration variable.
 
 ## Administrative UI
@@ -17,7 +17,7 @@ A [screenshot](http://drupal.org/node/1089888) is available.
 ## Developers API
 
 A module `example` with a
-[`MailSystemInterface`](http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/7)
+[`MailSystemInterface`](http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8)
 implementation called `ExampleMailSystem` should add the following in its
 `example.install` file:
 
@@ -82,13 +82,36 @@ of `examail`, then the `example.install` code should look like this:
       mailsystem_clear(array('example_examail' =\> ''));
     }
 
+### *(New in 2.x branch)*
+
+To change the site-wide defaults to use the `FooMailSystem` for formatting messages and the `BarMailSystem` for sending them:
+
+    mailsystem_set(
+      array(
+        mailsystem_default_id() => array(
+          'format' => 'FooMailSystem',
+          'mail' => 'BarMailSystem',
+        ),
+      )
+    );
+
+To change the site-wide defaults to use the `FooMailSystem` for sending messages, while continuing to use the current system for formatting them:
+
+    mailsystem_set(
+      array(
+        mailsystem_default_id() => array(
+          'mail' => 'FooMailsystem',
+        ),
+      )
+    );
+
 ## References
 
-**drupal_mail_system() API documentation**:
-:    http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/7
+**[`drupal_mail_system()` API documentation](http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8)**:
+:    [api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system](http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8)
 
-**MailSystemInterface API documentation**:
-:    http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/7
+**[`MailSystemInterface` API documentation](http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8)**:
+:    [api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface](http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8)
 
-**Creating HTML formatted mails in Drupal 7**
-:    http://drupal.org/node/900794
+**[Creating HTML formatted mails in Drupal 7](http://drupal.org/node/900794)**
+:    [drupal.org/node/900794](http://drupal.org/node/900794)

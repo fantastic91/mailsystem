@@ -77,24 +77,56 @@ function example_disable() {
 }
 
 
+  (New in 2.x branch)
+
+   To change the site-wide defaults to use the FooMailSystem for
+   formatting messages and the BarMailSystem for sending them:
+mailsystem_set(
+  array(
+    mailsystem_default_id() => array(
+      'format' => 'FooMailSystem',
+      'mail' => 'BarMailSystem',
+    ),
+  )
+);
+
+
+   To change the site-wide defaults to use the FooMailSystem for sending
+   messages, while continuing to use the current system for formatting
+   them:
+mailsystem_set(
+  array(
+    mailsystem_default_id() => array(
+      'mail' => 'FooMailsystem',
+    ),
+  )
+);
+
+
 References
 
-   drupal_mail_system() API documentation:
-          http://api.drupal.org/api/drupal/includes--mail.inc/function/dru
-          pal_mail_system/7
+   [7]drupal_mail_system() API documentation:
+          [8]api.drupal.org/api/drupal/includes--mail.inc/function/drupal_
+          mail_system
 
-   MailSystemInterface API documentation:
-          http://api.drupal.org/api/drupal/includes--mail.inc/interface/Ma
-          ilSystemInterface/7
+   [9]MailSystemInterface API documentation:
+          [10]api.drupal.org/api/drupal/includes--mail.inc/interface/MailS
+          ystemInterface
 
-   Creating HTML formatted mails in Drupal 7
-          http://drupal.org/node/900794
+   [11]Creating HTML formatted mails in Drupal 7
+          [12]drupal.org/node/900794
 
 References
 
    1. http://drupal.org/project/mailsystem
-   2. http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/7
+   2. http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8
    3. http://drupal.org/node/1089888
    4. http://drupal.org/project/htmlmail
    5. http://drupal.org/project/postmark
-   6. http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/7
+   6. http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8
+   7. http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8
+   8. http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8
+   9. http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8
+  10. http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8
+  11. http://drupal.org/node/900794
+  12. http://drupal.org/node/900794
