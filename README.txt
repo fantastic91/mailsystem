@@ -120,7 +120,7 @@ References
 
    1. http://drupal.org/project/mailsystem
    2. http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8
-   3. http://drupal.org/node/1089888
+   3. http://drupal.org/node/1134044
    4. http://drupal.org/project/htmlmail
    5. http://drupal.org/project/postmark
    6. http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8

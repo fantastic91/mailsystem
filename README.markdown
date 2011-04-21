@@ -7,7 +7,7 @@ configuration variable.
 ## Administrative UI
 
 The administrative interface is at <u>admin/config/system/mailsystem</u>.
-A [screenshot](http://drupal.org/node/1089888) is available.
+A [screenshot](http://drupal.org/node/1134044) is available.
 
 ## Used by;
 
