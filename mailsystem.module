@@ -6,6 +6,38 @@
  */
 
 /**
+ * Implements hook_boot().
+ *
+ * Caches list of MailSystemInteface classes, and removes classes from the
+ * mail_system variable that are no longer available.
+ *
+ * @see mailsystem_get_classes()
+ */
+function mailsystem_boot() {
+  mailsystem_get_classes();
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * Defines a permission for managing the mail_system variable.
+ */
+function mailsystem_permission() {
+  return array(
+    'administer mailsystem' => array(
+      'title' => t('Administer Mail System'),
+      'description' => t(
+        'Select the default, per-module, and per-mailing <a href="!interface"><code>@interface</code></a> to use for formatting and sending email messages.',
+        array(
+          '!interface' => url('http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8'),
+          '@interface' => 'MailSystemInterface',
+        )
+      ),
+    ),
+  );
+}
+
+/**
  * Implements hook_menu().
  */
 function mailsystem_menu() {
@@ -14,7 +46,7 @@ function mailsystem_menu() {
     'description' => 'Configure per-module Mail System settings.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('mailsystem_admin_settings'),
-    'access arguments' => array('administer site configuration'),
+    'access arguments' => array('administer mailsystem'),
     'file' => 'mailsystem.admin.inc',
   );
   return $items;
@@ -56,18 +88,135 @@ function mailsystem_get() {
 }
 
 /**
+ * Returns the default list of MailSystemInterface methods.
+ *
+ * @return
+ *   An array whose keys are the names of the methods defined by
+ *   MailSystemInterface and whose values are the default class used to
+ *   provide that method.
+ */
+function mailsystem_default_methods() {
+  $mail_system = mailsystem_get();
+  $default_class = $mail_system[mailsystem_default_id()];
+  return array(
+    'format' => $default_class,
+    'mail' => $default_class,
+  );
+}
+
+/**
+ * Creates and registers a new MailSystemInterface class.
+ *
+ * The newly-created class gets its name and each of its class methods from the
+ * other classes specified by the $class parameter.
+ *
+ * @param $class An associative array of ($method_name => $class_name) tuples,
+ * where each $method_name is the name of a class method to be created, and
+ * each $class_name is the name of a class to use for that method.
+ *
+ * @return
+ *   The name of the newly-created class if successful; otherwise FALSE.
+ */
+function mailsystem_create_class($classes, $reset=FALSE) {
+  // Merge in defaults.
+  $classes += mailsystem_default_methods();
+  ksort($classes);
+  // Do not create a new class whose methods all derive from the same class.
+  if (count(array_unique($classes)) === 1) {
+    return FALSE;
+  }
+  $class_name = implode('__', $classes);
+  // Ensure that the mailsystem directory exists.
+  $class_dir = file_build_uri('mailsystem');
+  if (!file_prepare_directory($class_dir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    return FALSE;
+  }
+  // Build the class filename.
+  $class_file = file_build_uri("mailsystem/$class_name.mail.inc");
+  // Convert to realpath.
+  $class_file = drupal_realpath($class_file);
+  // Strip DRUPAL_ROOT.
+  $class_file = preg_replace('#^' . DRUPAL_ROOT . '/#', '', $class_file);
+  if ($reset || !file_exists($class_file)) {
+    // Build the class implementation as a string.
+    $class_contents = '<?php
+class ' . $class_name . ' implements MailSystemInterface {';
+    // Create a protected variable to hold each method class.
+    foreach (array_keys($classes) as $method) {
+      $class_contents .= '
+  protected $' . $method . 'Class;';
+    }
+    // Create a class construction function to populate the variables.
+    $class_contents .= '
+  public function __construct() {';
+    foreach ($classes as $method => $class) {
+      $class_contents .= '
+    if (drupal_autoload_class(\'' . $class . '\')) {
+      $this->' . $method . 'Class = new ' . $class . ';
+    }
+    else {
+      $this->' . $method . 'Class = new ' . mailsystem_default_value() . ';
+    }';
+    }
+    $class_contents .= '
+  }';
+    // Create each class method.
+    foreach (array_keys($classes) as $method) {
+      $class_contents .= '
+  public function ' . $method . '(array $message) {
+    return $this->' . $method . 'Class->' . $method . '($message);
+  }';
+    }
+    $class_contents .= '
+}
+';
+    if (
+      file_unmanaged_save_data(
+        $class_contents,
+        $class_file,
+        FILE_EXISTS_REPLACE
+      )
+    ) {
+      drupal_static_reset('mailsystem_get_classes');
+      require_once 'includes/registry.inc';
+      _registry_parse_file($class_file, $class_contents, 'mailsystem');
+      drupal_set_message(
+        t('Class <code>%class</code> written to <code>%file</code>.',
+          array('%class' => $class_name, '%file' => $class_file)
+        )
+      );
+    }
+  }
+  return $class_name;
+}
+
+/**
  * Helps other modules safely set their own key within mail_system.  This
  * function should be called from hook_enable() implementations.
  *
- * @param $setting  An associative array ($module => $classname) where $module
- * will be using $classname to send its mail, and:
- *   - $module is the machine-readable module name.
- *   - $classname is a class that implements MailSystemInterface.
+ * @param $setting  An associative array ($id => $value) where:
+ *   - $id is the machine-readable module name optionally followed by '_'
+ *     and a key.
+ *   - $value is one of
+ *     - (string) The name of a class that implements MailSystemInterface.
+ *     - (array) An associative array with one or more of the following keys:
+ *       - format: The name of the class to use for the format() method.
+ *       - mail: The name of the class to use for the mail() method.
+ *
+ * @see drupal_mail()
  */
 function mailsystem_set(array $setting) {
+  $mail_system = mailsystem_get();
+  foreach ($setting as $key => $class) {
+    if (is_array($class)) {
+      unset($setting[$key]);
+      if ($hybrid_class = mailsystem_create_class($class)) {
+        $setting[$key] = $hybrid_class;
+      }
+    }
+  }
   variable_set('mail_system', array_merge(mailsystem_get(), $setting));
 }
-
 
 /**
  * Helps other modules safely remove their settings from mail_system.  This
@@ -91,4 +240,48 @@ function mailsystem_clear(array $setting) {
       array_diff_key(array_diff(mailsystem_get(), $setting), $setting)
     )
   );
+}
+
+/**
+ * Returns a list of classes which implement MailSystemInterface.
+ */
+function &mailsystem_get_classes() {
+  $mailsystem_classes = &drupal_static(__FUNCTION__);
+  if (!isset($mailsystem_classes)) {
+    $mailsystem_classes = array();
+    // @todo Is there a better way to find all mail-related classes?
+    $mail_classes = db_select('registry', 'registry')
+      ->distinct()
+      ->fields('registry', array('name', 'filename'))
+      ->where("type=:type AND ( filename like :filename OR name like :name )",
+        // Making the HUGE assumption that all classes which implement
+        // MailSystemInterface have filenames containing '.mail.' or
+        // classnames ending in 'MailSystem'.
+        array(
+          ':type' => 'class',
+          ':name' => '%MailSystem',
+          ':filename' => '%.mail.%',
+        )
+      )
+      ->execute()
+      ->fetchAllKeyed();
+    foreach ($mail_classes as $classname => $classfile) {
+      if ( file_exists($classfile)
+        && drupal_autoload_class($classname)
+        && ($object = new $classname)
+        && ($object instanceof MailSystemInterface)
+      ) {
+        $mailsystem_classes[$classname] = $classname;
+      }
+      else {
+        // Clear classes that are no longer available.
+        db_delete('registry')
+          ->condition('name', $classname)
+          ->execute();
+        mailsystem_clear(array(mailsystem_default_id() => $classname));
+      }
+    }
+    ksort($mailsystem_classes);
+  }
+  return $mailsystem_classes;
 }

@@ -5,10 +5,22 @@
  * Administrative form for setting the mail_system variable.
  */
 function mailsystem_admin_settings() {
+  $args = array(
+    '!interface' => url('http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8'),
+    '@interface' => 'MailSystemInterface',
+    '!format' => url('http://api.drupal.org/api/drupal/includes--mail.inc/function/MailSystemInterface%3A%3Aformat/8'),
+    '@format' => 'format()',
+    '!mail' => url('http://api.drupal.org/api/drupal/includes--mail.inc/function/MailSystemInterface%3A%3Amail/8'),
+    '@mail' => 'mail()',
+    '!default_class' => url('http://api.drupal.org/api/drupal/modules--system--system.mail.inc/class/DefaultMailSystem/8'),
+    '@default_class' => mailsystem_default_value(),
+    '%module' => 'module',
+    '%key' => 'key',
+  );
   $form = array('#submit' => array('mailsystem_admin_settings_submit'));
   $mail_system = mailsystem_get();
   $mail_defaults = mailsystem_defaults();
-  $mailsystem_classes = mailsystem_get_classes($mail_system);
+  $mailsystem_classes = mailsystem_get_classes();
   $descriptions = array();
   foreach (system_rebuild_module_data() as $item) {
     if ($item->status) {
@@ -22,19 +34,16 @@ function mailsystem_admin_settings() {
   $form['mailsystem'] = array(
     '#type' => 'fieldset',
     '#title' => t('Mail System Settings'),
-    '#description' => t('Drupal provides a default mail system called %def_class. Modules may provide additional mail systems. Each mail system is associated with one or more identifiers, composed of a %module and an optional %key. Each email being sent also has a %module and a %key. To decide which mail system to use, drupal uses the following search order: <ol><li>The mail system associated with the %module and %key, if any.</li><li>The mail system associated with the %module, if any.</li><li>The site-wide default mail system.</li></ol>',
-      array(
-        '%def_class' => mailsystem_default_value(),
-        '%module' => 'module',
-        '%key' => 'key',
-      )
+    '#description' => t('Drupal provides a default <a href="!interface"><code>@interface</code></a> class called <a href="!default_class"><code>@default_class</code></a>. Modules may provide additional classes. Each <a href="!interface"><code>@interface</code></a> class may be associated with one or more identifiers, composed of a %module and an optional %key. Each email being sent also has a %module and a %key. To decide which class to use, Drupal uses the following search order: <ol><li>The class associated with the %module and %key, if any.</li><li>The class associated with the %module, if any.</li><li>The site-wide default <a href="!interface"><code>@interface</code></a> class.</li></ol>', $args
     ),
     '#collapsible' => FALSE,
     '#tree' => TRUE,
   );
   $form['mailsystem'][mailsystem_default_id()] = array(
     '#type' => 'select',
-    '#title' => t('Site-wide default mail system'),
+    '#title' => t(
+      'Site-wide default <a href="!interface"><code>@interface</code></a> class', $args
+    ),
     '#options' => $mailsystem_classes,
     '#default_value' => $mail_system[mailsystem_default_id()],
   );
@@ -53,6 +62,7 @@ function mailsystem_admin_settings() {
     if ($key = substr($id, strlen($module) + 1)) {
       $title .= " ($key key)";
     }
+    $title .= ' class';
     $form['mailsystem'][$id] = array(
       '#type' => 'select',
       '#title' => $title,
@@ -61,6 +71,31 @@ function mailsystem_admin_settings() {
     );
     unset($descriptions[$module]);
   }
+  $form['class'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('New Class'),
+    '#description' => t(
+      'Create a new <a href="!interface"><code>@interface</code></a> that inherits its methods from other classes. The new class will be named after the other classes it uses.', $args
+    ),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#tree' => TRUE,
+  );
+  $mailsystem_classes[mailsystem_default_id()] = '--Select--';
+  $form['class']['format'] = array(
+    '#type' => 'select',
+    '#title' => t(
+      'Class to use for the <a href="!format"><code>@format</code></a> method', $args
+    ),
+    '#options' => $mailsystem_classes,
+  );
+  $form['class']['mail'] = array(
+    '#type' => 'select',
+    '#title' => t(
+      'Class to use for the <a href="!mail"><code>@mail</code></a> method', $args
+    ),
+    '#options' => $mailsystem_classes,
+  );
   $form['identifier'] = array(
     '#type' => 'fieldset',
     '#title' => t('New Setting'),
@@ -112,53 +147,26 @@ function mailsystem_admin_settings_submit($form, &$form_state) {
     }
   }
   unset($form_state['values']['mailsystem']);
+
+  if ($form_state['values']['class']['format'] === mailsystem_default_id()) {
+    unset($form_state['values']['class']['format']);
+  }
+  if ($form_state['values']['class']['mail'] === mailsystem_default_id()) {
+    unset($form_state['values']['class']['mail']);
+  }
+  if ($form_state['values']['class']) {
+    $new_class = mailsystem_create_class($form_state['values']['class']);
+  }
+  else {
+    $new_class = $mail_system[mailsystem_default_id()];
+  }
+  unset($form_state['values']['class']);
   if ($id = $form_state['values']['identifier']['module']) {
     if (!empty($form_state['values']['identifier']['key'])) {
       $id .= '_' . $form_state['values']['identifier']['key'];
     }
-    $mail_system[$id] = $mail_system[mailsystem_default_id()];
+    $mail_system[$id] = $new_clas;
   }
   unset($form_state['values']['identifier']);
   variable_set('mail_system', $mail_system);
-}
-
-/**
- * Returns a list of classes which implement MailSystemInterface.
- */
-function &mailsystem_get_classes(array $mail_system) {
-  $mailsystem_classes = &drupal_static(__FUNCTION__);
-  if (!isset($mailsystem_classes)) {
-    // @todo Is there a better way to load all mail-related class files?
-    $files = db_select('registry', 'registry')
-      ->distinct()
-      ->fields('registry', array('filename'))
-      ->where("type=:type AND ( filename like :filename OR name like :name )",
-        // Making the HUGE assumption that all classes which implement
-        // MailSystemInterface have filenames containing '.mail.' or
-        // classnames ending in 'MailSystem'.
-        array(
-          ':type' => 'class',
-          ':name' => '%MailSystem',
-          ':filename' => '%.mail.%',
-        )
-      )
-      ->execute()
-      ->fetchCol();
-    foreach ($files as $file) {
-      include_once($file);
-    }
-    foreach (get_declared_classes() as $classname) {
-      // Assuming SPL is available, since drupal uses it to autoload classes.
-      if (in_array('MailSystemInterface', class_implements($classname), TRUE)) {
-        $mailsystem_classes[$classname] = $classname;
-      }
-    }
-    foreach (array_unique(array_values($mail_system)) as $classname) {
-      if ($classname && is_string($classname)) {
-        $mailsystem_classes[$classname] = $classname;
-      }
-    }
-    ksort($mailsystem_classes);
-  }
-  return $mailsystem_classes;
 }
