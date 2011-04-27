@@ -6,15 +6,16 @@
  */
 
 /**
- * Implements hook_boot().
+ * Implements hook_init().
  *
  * Caches the list of MailSystemInteface classes, and removes classes
  * from the mail_system variable which are no longer available.
  *
  * @see mailsystem_get_classes()
  */
-function mailsystem_boot() {
+function mailsystem_init() {
   mailsystem_get_classes();
+  // @todo Remove this when issue #299138 gets resolved.
   if (!function_exists('mailsystem_html_to_text')) {
     module_load_include('inc','mailsystem','html_to_text');
   }
