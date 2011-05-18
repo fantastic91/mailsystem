@@ -4,4 +4,4 @@ description = "Provides a user interface for per-module and site-wide mail_syste
 php = 5.0
 core = 8.x
 configure = admin/config/system/mailsystem
-dependencies[] = 'filter'
+dependencies[] = filter
