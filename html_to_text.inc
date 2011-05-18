@@ -32,7 +32,7 @@
  *
  * @see drupal_mail()
  */
-function drupal_html_to_text($string, $allowed_tags = NULL) {
+function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
   // Cache list of supported tags.
   static $supported_tags;
