@@ -1,5 +1,7 @@
 <?php
 
+define('NBSP', html_entity_decode('&nbsp;'));
+
 /**
  * Perform format=flowed soft wrapping for mail (RFC 3676).
  *
