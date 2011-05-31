@@ -98,7 +98,7 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   // Parse $string into a DOM tree.
   $dom = filter_dom_load($string);
   $notes = array();
-  $text = _drupal_html_to_text($dom->documentElement, $allowed_tags, $notes);
+  $text = _mailsystem_html_to_text($dom->documentElement, $allowed_tags, $notes);
   // Convert non-breaking spaces to regular spaces.
   $text = str_replace(NBSP, ' ', $text);
   // Add footnotes;
@@ -336,7 +336,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   // Copy each child node to output.
   if ($node->hasChildNodes()) {
     foreach ($node->childNodes as $child) {
-      $child_text .= _drupal_html_to_text($child, $allowed_tags, $notes, $parents, $child_count);
+      $child_text .= _mailsystem_html_to_text($child, $allowed_tags, $notes, $parents, $child_count);
     }
   }
   // We only add prefix and suffix if the child nodes were non-empty.
