@@ -1,6 +1,8 @@
 <?php
 
-define('NBSP', html_entity_decode('&nbsp;'));
+if (!defined('NBSP')) {
+  define('NBSP', html_entity_decode('&nbsp;'));
+}
 
 /**
  * Perform format=flowed soft wrapping for mail (RFC 3676).
@@ -43,8 +45,12 @@ function _mailsystem_wrap_mail($text, $indent = '') {
   $text = preg_replace('/^ +\r?\n/m', $eol, $text);
   // Space-stuff special lines.
   $text = preg_replace('/^(>|From)/m', ' $1', $text);
+  // Strip and save trailing $eol chars to work around a bug in older PCRE
+  // libraries.
+  $stripped = rtrim($text, $eol);
+  $suffix = drupal_substr($text, drupal_strlen($stripped));
   // Apply indentation. We only include non-'>' indentation on the first line.
-  $text = $indent . drupal_substr(preg_replace('/^/m', $clean_indent, $text), drupal_strlen($indent));
+  $text = $indent . drupal_substr(preg_replace('/^/m', $clean_indent, $stripped), drupal_strlen($indent)) . $suffix;
   return $text;
 }
 
@@ -65,7 +71,7 @@ function _mailsystem_wrap_mail($text, $indent = '') {
  *
  * The following tags are also handled:
  *
- * <del> <div> <ins> <tr>: Rendered the same as a <p> tag.
+ * <div> <tr>: Rendered the same as a <p> tag.
  *
  * <td>: A space is inserted between adjacent table cells.
  *
@@ -86,9 +92,9 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   static $supported_tags;
   if (!isset($supported_tags)) {
     $supported_tags = array(
-      'a', 'address', 'b', 'blockquote', 'br', 'dd', 'del', 'div', 'dl', 'dt',
-      'em', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'ins', 'li', 'ol',
-      'p', 'pre', 'strong', 'td', 'tr', 'ul',
+      'a', 'address', 'b', 'blockquote', 'br', 'dd', 'div', 'dl', 'dt', 'em',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'i', 'li', 'ol', 'p', 'pre',
+      'strong', 'td', 'tr', 'ul',
     );
   }
 
@@ -99,13 +105,17 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   $dom = filter_dom_load($string);
   $notes = array();
   $text = _mailsystem_html_to_text($dom->documentElement, $allowed_tags, $notes);
-  // Convert non-breaking spaces to regular spaces.
-  $text = str_replace(NBSP, ' ', $text);
+  // Convert non-breaking spaces to regular spaces, and remove trailing newlines.
+  $text = trim(str_replace(NBSP, ' ', $text), $eol);
   // Add footnotes;
-  foreach ($notes as $url => $note) {
-    $text .= $eol . '[' . $note . '] ' . $url;
+  if ($notes) {
+    // Add a blank line before the footnote list.
+    $text .= $eol;
+    foreach ($notes as $url => $note) {
+      $text .= $eol . '[' . $note . '] ' . $url;
+    }
   }
-  return trim($text, $eol);
+  return $text;
 }
 
 /**
@@ -153,7 +163,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
       case 'a':
         if ( !empty($node->attributes)
           && ($href = $node->attributes->getNamedItem('href'))
-          && ($url = $href->nodeValue)
+          && ($url = url($href->nodeValue, array('absolute' => TRUE)))
           && valid_url($url) ) {
           // Only add links that have not already been added.
           if (isset($notes[$url])) {
@@ -169,9 +179,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
 
       // Generic block-level tags.
       case 'address':
-      case 'del':
       case 'div':
-      case 'ins':
       case 'p':
       case 'pre':
         $text = $eol;
@@ -278,7 +286,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
             && ($value = $node->attributes->getNamedItem('value'))) {
             $count = $value->nodeValue;
           }
-          $indent = NBSP . "$count)" . NBSP;
+          $indent = ($count < 10 ? NBSP : '') . NBSP . "$count)" . NBSP;
           $count++;
         }
         // Unordered list item.
