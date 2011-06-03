@@ -11,36 +11,38 @@
  *
  * @param $text
  *   The plain text to process.
- * @param $indent (optional)
- *   A string to indent the text with. Only '>' characters are repeated on
- *   subsequent wrapped lines. Others are replaced by spaces.
+ * @param $indent
+ *   (optional) A string to indent the text with. Only '>' characters are
+ *   repeated on subsequent wrapped lines. Others are replaced by spaces.
+ * @param $line_length
+ *   The line length at which to wrap.
  *
  * @see drupal_mail()
  */
-function _mailsystem_wrap_mail($text, $indent = '') {
+function mailsystem_wrap_mail($text, $indent = '', $line_length = 78) {
   // Convert LF or CRLF into platform-specific line-endings.
   $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
   $text = preg_replace('/\r?\n/', $eol, $text);
-  // See if soft-wrapping is allowed.
   $clean_indent = _mailsystem_html_to_text_clean($indent);
-  $soft = strpos($clean_indent, ' ') === FALSE;
+  $values = array(
+    'length' => drupal_strlen($indent),
+    'max' => $line_length,
+  );
   // Check if the string has line breaks.
   if (strpos($text, $eol) !== FALSE) {
-    // Remove trailing spaces to make existing breaks hard.
-    $text = preg_replace("/ +$eol/m", $eol, $text);
     // Wrap each line at the needed width.
     $lines = explode($eol, $text);
-    array_walk($lines, '_mailsystem_wrap_mail_line', array('soft' => $soft, 'length' => drupal_strlen($indent)));
+    array_walk($lines, '_mailsystem_wrap_mail_line', $values);
     $text = implode($eol, $lines);
   }
   else {
     // Wrap this line.
-    _mailsystem_wrap_mail_line($text, 0, array('soft' => $soft, 'length' => drupal_strlen($indent)));
+    _mailsystem_wrap_mail_line($text, 0, $values);
   }
   // Empty lines with nothing but spaces.
-  $text = preg_replace('/^ +\r?\n/m', $eol, $text);
+  $text = preg_replace("/^ +$eol/m", $eol, $text);
   // Space-stuff special lines.
-  $text = preg_replace('/^(>|From)/m', ' $1', $text);
+  $text = preg_replace('/^( |>|From)/m', ' $1', $text);
   // Strip and save trailing $eol chars to work around a bug in older PCRE
   // libraries.
   $stripped = rtrim($text, $eol);
@@ -102,9 +104,11 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   $dom = filter_dom_load($string);
   $notes = array();
   $text = _mailsystem_html_to_text($dom->documentElement, $allowed_tags, $notes);
-  // Convert non-breaking spaces to regular spaces, and remove trailing newlines.
+  // Convert non-breaking spaces to regular spaces, and trim trailing newlines.
   // chr(160) is the non-breaking space character.
   $text = trim(str_replace(chr(160), ' ', $text), $eol);
+  // Hard-wrap at 1000 characters and space-stuff special lines.
+  $text = mailsystem_wrap_mail($text, '', 1000);
   // Add footnotes;
   if ($notes) {
     // Add a blank line before the footnote list.
@@ -132,8 +136,10 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
  *   The list of ancestor tags, from nearest to most distant.
  * @param $count
  *   The number to use for the next list item within an ordered list.
+ * @param $line_length
+ *   The maximum length of a line, for wrapping.
  */
-function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$notes, array $parents = array(), &$count = NULL) {
+function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$notes, array $parents = array(), &$count = NULL, $line_length = 78) {
   if (!isset($count)) {
     $count = 1;
   }
@@ -141,9 +147,15 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   if ($node->nodeType === XML_TEXT_NODE) {
     // For text nodes, we just copy the text content.
     $text = $node->textContent;
-    // Collapse whitespace except within pre tags.
-    if (!in_array('pre', $parents)) {
+    if (in_array('pre', $parents)) {
+      // Within <pre> tags, all spaces are non-breaking.
+      $text = str_replace(' ', chr(160), $text);
+    }
+    else {
+      // Outside <pre> tags, collapse whitespace.
       $text = preg_replace('/[[:space:]]+/', ' ', $text);
+      // Trim spaces around newlines.
+      $text = preg_replace('/ *\n */', "\n", $text);
     }
     return $text;
   }
@@ -152,8 +164,8 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   $text = '';
   $child_text = '';
   $child_count = 1;
-  $prefix = '';
   $indent = '';
+  $prefix = '';
   $suffix = '';
   if (isset($node->tagName) && in_array($node->tagName, $allowed_tags)) {
     $tag = $node->tagName;
@@ -365,7 +377,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   // Copy each child node to output.
   if ($node->hasChildNodes()) {
     foreach ($node->childNodes as $child) {
-      $child_text .= _mailsystem_html_to_text($child, $allowed_tags, $notes, $parents, $child_count);
+      $child_text .= _mailsystem_html_to_text($child, $allowed_tags, $notes, $parents, $child_count, $line_length - drupal_strlen($indent));
     }
   }
   // We only add prefix and suffix if the child nodes were non-empty.
@@ -375,25 +387,49 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
       $suffix = '';
     }
     $child_text = $prefix . $child_text . $suffix;
-    // Remove spaces around newlines.
-    $child_text = preg_replace('/ *\n */', "\n", $child_text);
-    $child_text = _mailsystem_wrap_mail($child_text, $indent);
+    // Remove spaces around newlines, except within <pre> tags.
+    if (!in_array('pre', $parents)) {
+      $child_text = preg_replace('/ *\n */', "\n", $child_text);
+    }
     // We capitalize the contents of h1 and h2 tags.
     if ($tag === 'h1' || $tag === 'h2') {
       $child_text = drupal_strtoupper($child_text);
-      // For h1 and h2 tags at the top level, pad each non-empty line with the
+      // For h1 and h2 tags, pad each non-empty line with the
       // character used for indentation.
-      if (count($parents) === 1) {
-        $pad = drupal_substr($indent, 0, 1);
-        $lines = explode($eol, $child_text);
-        foreach ($lines as $i => $line) {
-          if (drupal_strlen($line)) {
-            // chr(160) is the non-breaking space character.
-            $lines[$i] = _drupal_html_to_text_pad($line . chr(160), $pad);
+      $pad = drupal_substr($indent, 0, 1);
+      $lines = explode($eol, $child_text);
+      foreach ($lines as $i => $line) {
+        if (drupal_strlen($line)) {
+          $parts = explode($eol, mailsystem_wrap_mail($line, $indent));
+          foreach ($parts as $j => $part) {
+            $part = rtrim($part);
+            $repeat = $line_length - 2 - drupal_strlen($part);
+            if ($repeat > 0) {
+              // chr(160) is the non-breaking space character.
+              $part .= chr(160);
+              $part .= str_repeat($pad, $repeat);
+            }
+            $parts[$j] = $part;
           }
+          $lines[$i] = implode($eol, $parts);
         }
         $child_text = implode($eol, $lines);
       }
+    }
+    else {
+      if (in_array('pre', $parents)) {
+        // Regular lines wrap at 80; <pre> lines wrap at 1000.
+        $line_length += 920;
+      }
+      $child_text = wordwrap($child_text, $line_length - drupal_strlen($indent));
+      $parts = explode($eol, $child_text);
+      $clean = _mailsystem_html_to_text_clean($indent);
+      foreach ($parts as $i => $part) {
+        if (drupal_strlen($part)) {
+          $parts[$i] = ($i ? $clean : $indent) . $part;
+        }
+      }
+      $child_text = implode($eol, $parts);
     }
     $text .= $child_text;
   }
@@ -407,42 +443,18 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
  */
 function _mailsystem_wrap_mail_line(&$line, $key, $values) {
   $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
-  // Use soft-breaks only for purely quoted or unindented text.
-  $line = wordwrap($line, 77 - $values['length'], ($values['soft'] ? ' ' : '') . $eol);
-  // Break really long words at the maximum width allowed.
-  $line = wordwrap($line, 996 - $values['length'], ($values['soft'] ? ' ' : '') . $eol, TRUE);
+  // Use soft-breaks only where there is no indent.
+  $break = ($values['length'] ? '' : ' ') . $eol;
+  $line = wordwrap($line, $values['max'] - $values['length'] - strlen($break), $break, TRUE);
 }
 
 /**
  * Helper function for drupal_wrap_mail() and drupal_html_to_text().
  *
- * Replace all non-quotation markers from a given piece of indentation with spaces.
+ * Replace all non-quotation markers from a given piece of indentation with
+ * non-breaking space characters.
  */
 function _mailsystem_html_to_text_clean($indent) {
   // chr(160) is the non-breaking space character.
   return preg_replace('/[^>]/', chr(160), $indent);
-}
-
-/**
- * Helper function for drupal_html_to_text().
- *
- * Pad the last line with the given character.
- */
-function _mailsystem_html_to_text_pad($text, $pad, $prefix = '') {
-  $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
-
-  // Calculate needed padding space and add it.
-  if (($p = strrpos($text, $eol)) === FALSE) {
-    $p = -1;
-  }
-  else {
-    // Convert position from byte count to character count. Must use substr()
-    // instead of drupal_substr() to match the previous strrpos() for which
-    // Drupal has no unicode-safe alternative.
-    $p = drupal_strlen(substr($text, 0, $p));
-  }
-  // Subtract the result of strrpos().
-  $n = max(0, 78 - (drupal_strlen($text) - $p) - drupal_strlen($prefix));
-  // Add prefix and padding.
-  return $text . $prefix . str_repeat($pad, $n);
 }
