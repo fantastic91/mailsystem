@@ -55,7 +55,7 @@ function mailsystem_wrap_mail($text, array $options = array()) {
   if ($options['pad']) {
     $options['pad_repeat'] = drupal_substr($options['pad'], -1, 1);
   }
-  $options['length'] = drupal_strlen($options['indent'] . $options['break']);
+  $options['wrap'] = $options['max'] - drupal_strlen($options['indent']);
   // The 'clean' indent is applied to all lines after the first one.
   $options['clean'] = _mailsystem_html_to_text_clean($options['indent']);
   // Replace line breaks with platform-dependent text.
@@ -125,7 +125,7 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   $text = mailsystem_wrap_mail($text, array('max' => 1000, 'hard' => TRUE));
   // Change non-breaking spaces back to regular spaces, and trim line breaks.
   // chr(160) is the non-breaking space character.
-  $text = trim(str_replace(chr(160), ' ', $text), $eol);
+  $text = str_replace(chr(160), ' ', trim($text, $eol));
   // Add footnotes;
   if ($notes) {
     // Add a blank line before the footnote list.
@@ -214,7 +214,10 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
       case 'div':
       case 'p':
       case 'pre':
-        $text = $eol;
+        // Start on a new line except as the first child of a list item.
+        if (!isset($parents[0]) || $parents[0] !== 'li' || !$node->isSameNode($node->parentNode->firstChild)) {
+          $text = $eol;
+        }
         $suffix = $eol;
         break;
 
@@ -261,8 +264,8 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
 
       // Dictionary list.
       case 'dl':
-        // Start on a newline except inside other lists.
-        if (!in_array('li', $parents)) {
+        // Start on a new line as the first child of a list item.
+        if (!isset($parents[0]) || $parents[0] !== 'li' || !$node->isSameNode($node->parentNode->firstChild)) {
           $text = $eol;
         }
         $suffix = $eol;
@@ -355,8 +358,8 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
 
       // Ordered lists.
       case 'ol':
-        // Start on a newline except inside other lists.
-        if (!in_array('li', $parents)) {
+        // Start on a new line as the first child of a list item.
+        if (!isset($parents[0]) || $parents[0] !== 'li' || !$node->isSameNode($node->parentNode->firstChild)) {
           $text = $eol;
         }
         // Check the start attribute.
@@ -386,8 +389,8 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
 
       // Unordered lists.
       case 'ul':
-        // Start on a newline except inside other lists.
-        if (!in_array('li', $parents)) {
+        // Start on a new line as the first child of a list item.
+        if (!isset($parents[0]) || $parents[0] !== 'li' || !$node->isSameNode($node->parentNode->firstChild)) {
           $text = $eol;
         }
         break;
@@ -624,11 +627,11 @@ function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, arr
  * Helper function for array_walk in drupal_wrap_mail().
  *
  * Inserts $values['break'] sequences to break up $line into parts of no more
- * than $values['max'] - $values['length'] characters.  Only breaks at space
- * characters, unless $values['hard'] is TRUE.
+ * than $values['wrap'] characters. Only breaks at space characters, unless
+ * $values['hard'] is TRUE.
  */
 function _mailsystem_wrap_mail_line(&$line, $key, $values) {
-  $line = wordwrap(rtrim($line), $values['max'] - $values['length'], $values['break'], $values['hard']);
+  $line = wordwrap(rtrim($line), $values['wrap'], $values['break'], $values['hard']);
 }
 
 /**
