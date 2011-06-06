@@ -52,14 +52,12 @@ function mailsystem_wrap_mail($text, array $options = array()) {
     // Allow soft-wrap spaces only when $text contains at least one space.
     $options['break'] = (strpos($text, ' ') === FALSE ? '' : ' ') . $defaults['eol'];
   }
+  $options['wrap'] = $options['max'] - drupal_strlen($options['indent']);
   if ($options['pad']) {
     $options['pad_repeat'] = drupal_substr($options['pad'], -1, 1);
   }
-  $options['wrap'] = $options['max'] - drupal_strlen($options['indent']);
   // The 'clean' indent is applied to all lines after the first one.
   $options['clean'] = _mailsystem_html_to_text_clean($options['indent']);
-  // Replace line breaks with platform-dependent text.
-  $text = preg_replace('/\r?\n/', $defaults['eol'], $text);
   // Wrap lines according to RFC 3676.
   $lines = explode($defaults['eol'], $text);
   array_walk($lines, '_mailsystem_wrap_mail_line', $options);
@@ -120,9 +118,11 @@ function mailsystem_html_to_text($string, $allowed_tags = NULL) {
   // Parse $string into a DOM tree.
   $dom = filter_dom_load($string);
   $notes = array();
+  // Recursively convert the DOM tree into plain text.
   $text = _mailsystem_html_to_text($dom->documentElement, $allowed_tags, $notes);
-  // Hard-wrap at 1000 characters and space-stuff.
-  $text = mailsystem_wrap_mail($text, array('max' => 1000, 'hard' => TRUE));
+  // Hard-wrap at 1000 characters (including the line break sequence)
+  // and space-stuff special lines.
+  $text = mailsystem_wrap_mail($text, array('max' => 1000 - strlen($eol), 'hard' => TRUE));
   // Change non-breaking spaces back to regular spaces, and trim line breaks.
   // chr(160) is the non-breaking space character.
   $text = str_replace(chr(160), ' ', trim($text, $eol));
@@ -166,6 +166,8 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   if ($node->nodeType === XML_TEXT_NODE) {
     // For text nodes, we just copy the text content.
     $text = $node->textContent;
+    // Convert line breaks and trim trailing spaces.
+    $text = preg_replace('/ *\r?\n/', $eol, $text);
     if (in_array('pre', $parents)) {
       // Within <pre> tags, all spaces become non-breaking.
       // chr(160) is the non-breaking space character.
@@ -193,7 +195,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
       case 'a':
         $test = !empty($node->attributes);
         $test = $test && ($href = $node->attributes->getNamedItem('href'));
-        $test = $test && ($url = url(ltrim($href->nodeValue, '/'), array('absolute' => TRUE)));
+        $test = $test && ($url = url(preg_replace('|^' . base_path() . '|', '', $href->nodeValue), array('absolute' => TRUE)));
         $test = $test && valid_url($url);
         if ($test) {
           // Only add links that have not already been added.
@@ -419,12 +421,13 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
     }
     // Trim spaces around newlines except with <pre> or inline tags.
     if (!in_array($tag, array('a', 'b', 'cite', 'em', 'i', 'pre', 'strong', 'u'))) {
-      $child_text = preg_replace('/ *\n */', "\n", $child_text);
+      $child_text = preg_replace('/ *' . $eol . ' */', $eol, $child_text);
     }
     // Soft-wrap at effective line length, but don't space-stuff.
     $child_text = mailsystem_wrap_mail(
       $prefix . $child_text,
       array(
+        // chr(160) is the non-breaking space character.
         'break' => chr(160) . $eol,
         'indent' => $indent,
         'max' => $line_length,
@@ -434,11 +437,13 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
     ) . $suffix;
     if ($tag === 'pre') {
       // Perform RFC-3676 soft-wrapping.
+      // chr(160) is the non-breaking space character.
       $child_text = str_replace(chr(160), ' ', $child_text);
       $child_text = mailsystem_wrap_mail(
         $child_text,
         array('max' => $line_length, 'stuff' => FALSE)
       );
+      // chr(160) is the non-breaking space character.
       $child_text = str_replace(' ', chr(160), $child_text);
     }
     $text .= $child_text;
@@ -459,27 +464,26 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
  * @param array &$notes
  *   A writeable array of footnote reference numbers, keyed by their
  *   respective hyperlink destination urls.
- * @param $line_length
- *   The desired maximum line length, after word-wrapping each table cell.
+ * @param $table_width
+ *   The desired maximum table width, after word-wrapping each table cell.
  *
  * @return
  *   A plain text representation of the table.
  *
  * @see _mailsystem_html_to_text()
  */
-function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, array &$notes = array(), $line_length = 80) {
+function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, array &$notes = array(), $table_width = 80) {
   $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
   $header = array();
   $footer = array();
   $body = array();
-  $text = '';
-  $text = '';
+  $text = $eol;
   $current = $node;
   while (TRUE) {
     if (isset($current->tagName)) {
       switch ($current->tagName) {
         case 'caption':  // The table caption is added first.
-          $text = _mailsystem_html_to_text($caption, $allowed_tags, $notes, $line_length);
+          $text = _mailsystem_html_to_text($caption, $allowed_tags, $notes, $table_width);
           break;
 
         case 'tr':
@@ -516,111 +520,168 @@ function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, arr
   }
   // Merge the thead, tbody, and tfoot sections together.
   if ($rows = array_merge($header, $body, $footer)) {
+    $num_rows = count($rows);
     // First just count the number of columns.
-    $columns = 0;
+    $num_cols = 0;
     foreach ($rows as $row) {
-      if ($row->childNodes) {
-        $columns = max($columns, $row->childNodes->length);
+      $row_cols = 0;
+      foreach ($row->childNodes as $cell) {
+        if (isset($cell->tagName) && in_array($cell->tagName, array('td', 'th'))) {
+          $row_cols++;
+        }
       }
+      $num_cols = max($num_cols, $row_cols);
     }
-    if ($columns) {
-      // If any columns were found, calculate each column height and width.
-      $width = $line_length - $columns + 1;
-      $table_width = 1000;
-      $table = array();
-      // Find an appropriate width to wrap each cell.
+    // If any columns were found, calculate each column height and width.
+    if ($num_cols) {
+      // Set up a binary search for best wrap width for each column.
+      $max = max($table_width - $num_cols - 1, 1);
+      $max_wraps = array_fill(0, $num_cols, $max);
+      $try = max(intval(($table_width - 1) / $num_cols - 1), 1);
+      $try_wraps = array_fill(0, $num_cols, $try);
+      $min_wraps = array_fill(0, $num_cols, 1);
+      // Start searching...
+      $change = FALSE;
       do {
-        // Start with zero for each width and height, and and empty cell array.
-        $widths = array_fill(0, $columns, 0);
-        $heights = array_fill(0, count($rows), 0);
-        $cells = array();
-        $breaks = array();
+        $change = FALSE;
+        $widths = array_fill(0, $num_cols, 0);
+        $heights = array_fill(0, $num_rows, 0);
+        $table = array_fill(0, $num_rows, array_fill(0, $num_cols, ''));
+        $breaks = array_fill(0, $num_cols, FALSE);
         foreach ($rows as $i => $row) {
-          foreach ($row->childNodes as $j => $cell) {
-            $z = 0;
+          $j = 0;
+          foreach ($row->childNodes as $cell) {
+            if (!isset($cell->tagName) || !in_array($cell->tagName, array('td', 'th'))) {
+              // Skip text nodes.
+              continue;
+            }
             // Render the cell contents.
-            $cells[$i][$j] = _mailsystem_html_to_text($cell, $allowed_tags, $notes, $width);
-            // Split the cell into lines.
-            $lines = explode($eol, $cells[$i][$j]);
-            // The row height is the maximum number of lines among all the
-            // cells in that row.
-            $heights[$i] = max($heights[$i], count($lines));
-            foreach ($lines as $line) {
-              $this_width = drupal_strlen($line);
-              // The column width is the maximum line width among all the
-              // lines in that column.
-              if ($this_width > $widths[$j]) {
-                $widths[$j] = $this_width;
-                // If the longest line in a column contains at least one
-                // space character, then the table can be made narrower.
-                $breaks[$j] = strpos(' ', $line) !== FALSE;
+            $cell = _drupal_html_to_text($cell, $allowed_tags, $notes, $try_wraps[$j]);
+            // Trim leading line-breaks and trailing whitespace.
+            // chr(160) is the non-breaking space character.
+            $cell = rtrim(ltrim($cell, $eol), ' ' . $eol . chr(160));
+            $table[$i][$j] = $cell;
+            if ($cell > '') {
+              // Split the cell into lines.
+              $lines = explode($eol, $cell);
+              // The row height is the maximum number of lines among all the
+              // cells in that row.
+              $heights[$i] = max($heights[$i], count($lines));
+              foreach ($lines as $line) {
+                $this_width = drupal_strlen($line);
+                // The column width is the maximum line width among all the
+                // lines in that column.
+                if ($this_width > $widths[$j]) {
+                  $widths[$j] = $this_width;
+                  // If the longest line in a column contains at least one
+                  // space character, then the table can be made narrower.
+                  $breaks[$j] = strpos(' ', $line) !== FALSE;
+                }
               }
             }
+            $j++;
           }
         }
         // Calculate the total table width;
-        $this_width = array_sum($widths) + $columns + 1;
-        if ($this_width < $table_width) {
-          $table_width = $this_width;
-          // Save this configuration in case it turns out to be the best one.
-          $table = array($widths, $heights, $cells);
-          if ($table_width <= $line_length) {
-            // Table width is within limits; we're done.
+        $this_width = array_sum($widths) + $num_cols + 1;
+        if ($this_width > $table_width) {
+          // Wider than desired.
+          if (!in_array(TRUE, $breaks)) {
+            // If there are no more break points, then the table is already as
+            // narrow as it can get, so we're done.
             break;
           }
-        }
-        elseif (!in_array(TRUE, $breaks)) {
-          // If there are no more break points, then the table is already as
-          // narrow as it can get, so we're done.
-          break;
-        }
-        // Try wrapping each column at a smaller width.
-        $width--;
-      } while ($width > 1);
-      // Retrieve the best configuration that was found.
-      list ($widths, $heights, $cells) = $table;
-      // Pad each cell to column width and line height.
-      foreach ($cells as $i => $row) {
-        foreach ($row as $j => $cell) {
-          // Pad each cell to the maximum number of lines in that row.
-          $lines = array_pad(explode($eol, $cell), $heights[$i], '');
-          foreach ($lines as $k => $line) {
-            // Pad each line to the maximum width in that column.
-            $count = $widths[$j] - drupal_strlen($line);
-            if ($count > 0) {
-              $lines[$k] .= str_repeat(' ', $count);
+          foreach ($try_wraps as $i => $wrap) {
+            $max_wraps[$i] = min($max_wraps[$i], $wrap);
+            if ($breaks[$i]) {
+              $new_wrap = intval(($min_wraps[$i] + $max_wraps[$i]) / 2);
+              $new_wrap = min($new_wrap, $widths[$i] - 1);
+              $new_wrap = max($new_wrap, $min_wraps[$i]);
+            }
+            else {
+              // There's no point in trying to make the column narrower than
+              // the widest un-wrappable line in the column.
+              $min_wraps[$i] = $widths[$i];
+              $new_wrap = $widths[$i];
+            }
+            if ($try_wraps[$i] > $new_wrap) {
+              $try_wraps[$i] = $new_wrap;
+              $change = TRUE;
             }
           }
-          $cells[$i][$j] = $lines;
+        }
+        elseif ($this_width < $table_width) {
+          // Narrower than desired.
+          foreach ($try_wraps as $i => $wrap) {
+            if ($min_wraps[$i] < $wrap) {
+              $min_wraps[$i] = $wrap;
+            }
+            $new_wrap = intval(($min_wraps[$i] + $max_wraps[$i]) / 2);
+            $new_wrap = max($new_wrap, $widths[$i] + 1);
+            $new_wrap = min($new_wrap, $max_wraps[$i]);
+            if ($try_wraps[$i] < $new_wrap) {
+              $try_wraps[$i] = $new_wrap;
+              $change = TRUE;
+            }
+          }
+        }
+      } while ($change);
+      // Pad each cell to column width and line height.
+      for ($i = 0; $i < $num_rows; $i++) {
+        if ($heights[$i]) {
+          for ($j = 0; $j < $num_cols; $j++) {
+            $cell = $table[$i][$j];
+            // Pad each cell to the maximum number of lines in that row.
+            $lines = array_pad(explode($eol, $cell), $heights[$i], '');
+            foreach ($lines as $k => $line) {
+              // Pad each line to the maximum width in that column.
+              $repeat = $widths[$j] - drupal_strlen($line);
+              if ($repeat > 0) {
+                // chr(160) is the non-breaking space character.
+                $lines[$k] .= str_repeat(chr(160), $repeat);
+              }
+            }
+            $table[$i][$j] = $lines;
+          }
         }
       }
       // Generate the row separator line.
-      $row_line = '+';
-      foreach ($widths as $width) {
-        $row_line .= str_repeat('-', $width) . '+';
+      $separator = '+';
+      for($i = 0; $i < $num_cols; $i++) {
+        $separator .= str_repeat('-', $widths[$i]) . '+';
       }
-      $row_line .= $eol;
-      // Final output starts with a row separator.
-      $text .= $row_line;
-      foreach ($cells as $i => $row) {
+      $separator .= $eol;
+      for ($i = 0; $i < $num_rows; $i++) {
+        $text .= $separator;
+        if (!$heights[$i]) {
+          continue;
+        }
+        $row = $table[$i];
         // For each row, iterate first by lines within the row.
         for ($k = 0; $k < $heights[$i]; $k++) {
           // Add a vertical-bar at the beginning of each row line.
-          $text .= '|';
+          $row_line = '|';
+          $trimmed = '';
           // Within each row line, iterate by cells within that line.
-          foreach ($row as $j => $lines) {
+          for ($j = 0; $j < $num_cols; $j++) {
             // Add a vertical bar at the end of each cell line.
-            $text .= $lines[$k] . '|';
+            $row_line .= $row[$j][$k] . '|';
+            // chr(160) is the non-breaking space character.
+            $trimmed .= trim($row[$j][$k], ' ' . $eol . chr(160));
           }
-          // Add a line break at the end of each row line.
-          $text .= $eol;
+          if ($trimmed > '') {
+            // Only print rows that are non-empty.
+            $text .= $row_line . $eol;
+          }
         }
-        // Add a row separator at the end of each row.
-        $text .= $row_line;
       }
+      // Final output ends with a row separator.
+      $text .= $separator;
     }
   }
-  return $text;
+  // Make sure formatted table content doesn't line-wrap.
+  // chr(160) is the non-breaking space character.
+  return str_replace(' ', chr(160), $text);
 }
 
 /**
@@ -631,7 +692,7 @@ function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, arr
  * $values['hard'] is TRUE.
  */
 function _mailsystem_wrap_mail_line(&$line, $key, $values) {
-  $line = wordwrap(rtrim($line), $values['wrap'], $values['break'], $values['hard']);
+  $line = wordwrap($line, $values['wrap'], $values['break'], $values['hard']);
 }
 
 /**
