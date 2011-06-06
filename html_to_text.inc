@@ -556,7 +556,7 @@ function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, arr
               continue;
             }
             // Render the cell contents.
-            $cell = _drupal_html_to_text($cell, $allowed_tags, $notes, $try_wraps[$j]);
+            $cell = _mailsystem_html_to_text($cell, $allowed_tags, $notes, $try_wraps[$j]);
             // Trim leading line-breaks and trailing whitespace.
             // chr(160) is the non-breaking space character.
             $cell = rtrim(ltrim($cell, $eol), ' ' . $eol . chr(160));
