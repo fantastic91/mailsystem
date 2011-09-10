@@ -8,7 +8,7 @@
    The administrative interface is at admin/config/system/mailsystem. A
    [3]screenshot is available.
 
-  Used by;
+  Used by:
 
      * [4]HTML Mail
      * [5]Mime Mail 7.x-1.x-dev

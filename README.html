@@ -2,7 +2,7 @@
 <p>Provides an Administrative UI and Developers API for safely updating the <a href="http://api.drupal.org/api/drupal/includes--mail.inc/function/drupal_mail_system/8">mail_system</a> configuration variable.</p>
 <h3 id="administrative-ui">Administrative UI</h3>
 <p>The administrative interface is at <code>admin/config/system/mailsystem</code>. A <a href="http://drupal.org/node/1134044">screenshot</a> is available.</p>
-<h3 id="used-by">Used by;</h3>
+<h3 id="used-by">Used by:</h3>
 <ul>
   <li><a href="http://drupal.org/project/htmlmail">HTML Mail</a></li>
   <li><a href="http://drupal.org/project/mimemail">Mime Mail 7.x-1.x-dev</a></li>
@@ -15,24 +15,24 @@
  * Implements hook_enable().
  */
 function example_enable() {
-  mailsystem_set(array('example' => 'ExampleMailSystem'));
+  mailsystem_set(array('example' =&gt; 'ExampleMailSystem'));
 }
 /**
  * Implements hook_disable().
  */
 function example_disable() {
-  mailsystem_clear(array('example' => 'ExampleMailSystem'));
+  mailsystem_clear(array('example' =&gt; 'ExampleMailSystem'));
 }
 </code>
 </pre>
 <p>The above settings allow mail sent by <code>example</code> to use <code>ExampleMailSystem</code>. To make <code>ExampleMailSystem</code> the site-wide default for sending mail:</p>
 <pre>
-<code>mailsystem_set(array(mailsystem_default_id() => 'ExampleMailSystem'));
+<code>mailsystem_set(array(mailsystem_default_id() =&gt; 'ExampleMailSystem'));
 </code>
 </pre>
 <p>To restore the default mail system:</p>
 <pre>
-<code>mailsystem_set(array(mailsystem_default_id() => mailsystem_default_value()));
+<code>mailsystem_set(array(mailsystem_default_id() =&gt; mailsystem_default_value()));
 </code>
 </pre>
 <p>Or simply:</p>
@@ -46,13 +46,13 @@ function example_disable() {
  * Implements hook_enable().
  */
 function example_enable() {
-  mailsystem_set(array('example' => 'FooMailSystem'));
+  mailsystem_set(array('example' =&gt; 'FooMailSystem'));
 }
 /**
  * Implements hook_disable().
  */
 function example_disable() {
-  mailsystem_clear(array('example' => ''));
+  mailsystem_clear(array('example' =&gt; ''));
 }
 </code>
 </pre>
@@ -62,13 +62,13 @@ function example_disable() {
  * Implements hook_enable().
  */
 function example_enable() {
-  mailsystem_set(array('example_examail' => 'FooMailSystem'));
+  mailsystem_set(array('example_examail' =&gt; 'FooMailSystem'));
 }
 /**
  * Implements hook_disable().
  */
 function example_disable() {
-  mailsystem_clear(array('example_examail' => ''));
+  mailsystem_clear(array('example_examail' =&gt; ''));
 }
 </code>
 </pre>
@@ -77,9 +77,9 @@ function example_disable() {
 <pre>
 <code>mailsystem_set(
   array(
-    mailsystem_default_id() => array(
-      'format' => 'FooMailSystem',
-      'mail' => 'BarMailSystem',
+    mailsystem_default_id() =&gt; array(
+      'format' =&gt; 'FooMailSystem',
+      'mail' =&gt; 'BarMailSystem',
     ),
   )
 );
@@ -89,8 +89,8 @@ function example_disable() {
 <pre>
 <code>mailsystem_set(
   array(
-    mailsystem_default_id() => array(
-      'mail' => 'FooMailsystem',
+    mailsystem_default_id() =&gt; array(
+      'mail' =&gt; 'FooMailsystem',
     ),
   )
 );
