@@ -9,7 +9,7 @@ configuration variable.
 The administrative interface is at `admin/config/system/mailsystem`.
 A [screenshot](http://drupal.org/node/1134044) is available.
 
-### Used by;
+### Used by:
 
 * [HTML Mail](http://drupal.org/project/htmlmail)
 * [Mime Mail 7.x-1.x-dev](http://drupal.org/project/mimemail)
@@ -26,24 +26,24 @@ implementation called `ExampleMailSystem` should add the following in its
      * Implements hook_enable().
      */
     function example_enable() {
-      mailsystem_set(array('example' =\> 'ExampleMailSystem'));
+      mailsystem_set(array('example' => 'ExampleMailSystem'));
     }
 
     /**
      * Implements hook_disable().
      */
     function example_disable() {
-      mailsystem_clear(array('example' =\> 'ExampleMailSystem'));
+      mailsystem_clear(array('example' => 'ExampleMailSystem'));
     }
 
 The above settings allow mail sent by `example` to use `ExampleMailSystem`.  To make
 `ExampleMailSystem` the site-wide default for sending mail:
 
-    mailsystem_set(array(mailsystem_default_id() =\> 'ExampleMailSystem'));
+    mailsystem_set(array(mailsystem_default_id() => 'ExampleMailSystem'));
 
 To restore the default mail system:
 
-    mailsystem_set(array(mailsystem_default_id() =\> mailsystem_default_value()));
+    mailsystem_set(array(mailsystem_default_id() => mailsystem_default_value()));
 
 Or simply:
 
@@ -56,14 +56,14 @@ the `example.install` code should like like this:
      * Implements hook_enable().
      */
     function example_enable() {
-      mailsystem_set(array('example' =\> 'FooMailSystem'));
+      mailsystem_set(array('example' => 'FooMailSystem'));
     }
 
     /**
      * Implements hook_disable().
      */
     function example_disable() {
-      mailsystem_clear(array('example' =\> ''));
+      mailsystem_clear(array('example' => ''));
     }
 
 If module `example` only wants to use `FooMailSystem` when sending emails with a key
@@ -73,14 +73,14 @@ of `examail`, then the `example.install` code should look like this:
      * Implements hook_enable().
      */
     function example_enable() {
-      mailsystem_set(array('example_examail' =\> 'FooMailSystem'));
+      mailsystem_set(array('example_examail' => 'FooMailSystem'));
     }
 
     /**
      * Implements hook_disable().
      */
     function example_disable() {
-      mailsystem_clear(array('example_examail' =\> ''));
+      mailsystem_clear(array('example_examail' => ''));
     }
 
 #### *(New in 2.x branch)*
@@ -89,9 +89,9 @@ To change the site-wide defaults to use the `FooMailSystem` for formatting messa
 
     mailsystem_set(
       array(
-        mailsystem_default_id() =\> array(
-          'format' =\> 'FooMailSystem',
-          'mail' =\> 'BarMailSystem',
+        mailsystem_default_id() => array(
+          'format' => 'FooMailSystem',
+          'mail' => 'BarMailSystem',
         ),
       )
     );
@@ -100,8 +100,8 @@ To change the site-wide defaults to use the `FooMailSystem` for sending messages
 
     mailsystem_set(
       array(
-        mailsystem_default_id() =\> array(
-          'mail' =\> 'FooMailsystem',
+        mailsystem_default_id() => array(
+          'mail' => 'FooMailsystem',
         ),
       )
     );

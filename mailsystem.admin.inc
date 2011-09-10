@@ -111,7 +111,6 @@ function mailsystem_admin_settings() {
       array(
         '%module' => 'module',
         '%key' => 'key',
-
       )
     ),
     '#collapsible' => TRUE,

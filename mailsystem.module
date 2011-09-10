@@ -173,18 +173,13 @@ class ' . $class_name . ' implements MailSystemInterface {';
   $class_contents .= '
 }
 ';
-  if (
-    file_unmanaged_save_data(
-      $class_contents,
-      $class_file,
-      FILE_EXISTS_REPLACE
-    )
-  ) {
+  if (file_unmanaged_save_data($class_contents, $class_file, FILE_EXISTS_REPLACE)) {
     // Remove any conflicting registry entries to avoid a database error.
     $class_condition = db_and()
       ->condition('name', $class_name)
       ->condition('type', 'class');
-    $file_condition = condition('filename', $class_file);
+    $file_condition = db_and()
+      ->condition('filename', $class_file);
     db_delete('registry_file')
       ->condition($file_condition);
     db_delete('registry')->condition(
@@ -280,8 +275,8 @@ function &mailsystem_get_classes() {
         // classnames ending in 'MailSystem'.
         array(
           ':type' => 'class',
-          ':filename' => '%.mail.%',
           ':name' => '%MailSystem',
+          ':filename' => '%.mail.%',
         )
       )
       ->execute()
@@ -294,7 +289,7 @@ function &mailsystem_get_classes() {
       }
     }
     foreach ($all_classes as $classname => $autoload) {
-      if ( ($autoload || preg_match('/Mailsystem/', $classname))
+      if ( ($autoload || preg_match('/MailSystem/', $classname))
         && ($object = new $classname)
         && ($object instanceof MailSystemInterface)
       ) {
