@@ -4,7 +4,7 @@
  * @file
  * Administrative form for setting the mail_system variable.
  */
-function mailsystem_admin_settings() {
+/*function mailsystem_admin_settings() {
   $args = array(
     '!interface' => url('http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8'),
     '@interface' => 'MailSystemInterface',
@@ -151,7 +151,7 @@ function mailsystem_admin_settings() {
     '#value' => t('Save settings'),
   );
   return $form;
-}
+}*/
 
 /**
  * Processes mailsystem_admin_settings form.

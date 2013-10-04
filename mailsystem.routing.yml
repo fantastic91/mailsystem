@@ -1,0 +1,6 @@
+mailsystem.settings:
+  path: '/admin/config/system/mailsystem'
+  defaults:
+    _form: '\Drupal\mailsystem\AdminForm'
+  requirements:
+    _permission: 'administer mailsystem'

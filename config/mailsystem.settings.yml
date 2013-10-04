@@ -1,0 +1,5 @@
+defaults:
+  theme: 'current'
+  mailsystem: 'default-system'
+  mailsystem_name: 'DefaultMailSystem'
+  mailsystem_id: 'default-system'

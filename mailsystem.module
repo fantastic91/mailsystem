@@ -47,17 +47,16 @@ function mailsystem_permission() {
 function mailsystem_menu() {
   $items['admin/config/system/mailsystem'] = array(
     'title' => 'Mail System',
+    'route_name' => 'mailsystem.settings',
     'description' => 'Configure per-module Mail System settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('mailsystem_admin_settings'),
-    'access arguments' => array('administer mailsystem'),
-    'file' => 'mailsystem.admin.inc',
   );
   return $items;
 }
 
 /**
  * Returns the id for the default mail_system setting.
+ *
+ * @deprecated use $this->configFactory->get('mailsystem.settings')->get('defaults.mailsystem_id')
  */
 function mailsystem_default_id() {
   // @todo: Is there a way to get this from core?
@@ -66,6 +65,8 @@ function mailsystem_default_id() {
 
 /**
  * Returns the value for the default mail_system setting.
+ *
+ * @deprecated use $this->configFactory->get('mailsystem.settings')->get('defaults.mailsystem_name')
  */
 function mailsystem_default_value() {
   // @todo: Is there a way to get this from core?
@@ -74,6 +75,8 @@ function mailsystem_default_value() {
 
 /**
  * Returns the default settings for the mail_system variable.
+ *
+ * @deprecated Use AdminForm::getDefaultMailsystem()
  */
 function mailsystem_defaults() {
   return array(mailsystem_default_id() => mailsystem_default_value());
@@ -83,6 +86,8 @@ function mailsystem_defaults() {
  * Returns the current mail_system settings.
  *
  * @return The contents of the mail_system variable merged with its defaults.
+ *
+ * @deprecated use AdminForm::getMailsystem()
  */
 function mailsystem_get() {
   return array_merge(
