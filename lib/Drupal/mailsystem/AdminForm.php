@@ -75,7 +75,7 @@ class AdminForm extends ConfigFormBase {
     );
 
     // OLD
-    $descriptions = array();
+    /*$descriptions = array();
     foreach (system_rebuild_module_data() as $item) {
       if ($item->status) {
         $descriptions[$item->name] = (
@@ -86,7 +86,7 @@ class AdminForm extends ConfigFormBase {
     }
     asort($descriptions);
 
-    /*foreach (array_diff_key($this->getMailsystem(), $this->getDefaultMailsystem()) as $id => $class) {
+    foreach (array_diff_key($this->getMailsystem(), $this->getDefaultMailsystem()) as $id => $class) {
       // Separate $id into $module and $key.
       $module = $id;
       while ($module && empty($descriptions[$module])) {
@@ -211,7 +211,7 @@ class AdminForm extends ConfigFormBase {
    * @return array
    *   Array with the id from the mail system and the name as value.
    */
-  protected function getDefaultMailsystem() {
+  /*protected function getDefaultMailsystem() {
     $config = $this->configFactory->get('mailsystem.settings');
     return array($config->get('mailsystem_id') => $config->get('mailsystem_name'));
   }
@@ -226,7 +226,7 @@ class AdminForm extends ConfigFormBase {
       );
     }
     return $this->getDefaultMailsystem();
-  }
+  }*/
 
   /**
    * Returns a list with all formatter plugins.
