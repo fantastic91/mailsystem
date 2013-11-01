@@ -25,11 +25,11 @@ class AdminForm extends ConfigFormBase {
     $config = $this->configFactory->get('mailsystem.settings');
 
     $arguments = array(
-      '!interface' => url('http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8'),
-      '@interface' => 'MailSystemInterface',
-      '!format' => url('http://api.drupal.org/api/drupal/includes--mail.inc/function/MailSystemInterface%3A%3Aformat/8'),
+      '!interface' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
+      '@interface' => '\Drupal\Core\Mail\MailInterface',
+      '!format' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8'),
       '@format' => 'format()',
-      '!mail' => url('http://api.drupal.org/api/drupal/includes--mail.inc/function/MailSystemInterface%3A%3Amail/8'),
+      '!mail' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8'),
       '@mail' => 'mail()',
       '!default_class' => url('http://api.drupal.org/api/drupal/modules--system--system.mail.inc/class/DefaultMailSystem/8'),
       '@default_class' => $config->get('defaults.mailsystem_name'),
@@ -45,11 +45,19 @@ class AdminForm extends ConfigFormBase {
       '#collapsible' => FALSE,
       '#tree' => TRUE,
     );
-    $form['mailsystem']['default_system'] = array(
+    $form['mailsystem']['default_formatter'] = array(
       '#type' => 'select',
-      '#title' => t('Site-wide default <a href="!interface"><code>@interface</code></a> class', $arguments),
+      '#title' => t('The default site-wide mail formatter'),
+      '#description' => t('Select the standard Mailer-Plugin for formatting the email before sending it. This is an instance from <a href="!interface">@interface</a>', $arguments),
       '#options' => $this->getMailsystemClassesList(),
-      '#default_value' => $config->get('defaults.mailsystem'),
+      '#default_value' => $config->get('defaults.formatter'),
+    );
+    $form['mailsystem']['default_sender'] = array(
+      '#type' => 'select',
+      '#title' => t('The default site-wide mail sender.'),
+      '#description' => t('Select the standard Mailer-Plugin for sending the email after formatting it. This is an instance from <a href="!interface">@interface</a>', $arguments),
+      '#options' => $this->getMailsystemClassesList(),
+      '#default_value' => $config->get('defaults.sender'),
     );
 
     // Theme to render the emails.
@@ -106,9 +114,7 @@ class AdminForm extends ConfigFormBase {
     $form['class'] = array(
       '#type' => 'fieldset',
       '#title' => t('New Class'),
-      '#description' => t(
-        'Create a new <a href="!interface"><code>@interface</code></a> that inherits its methods from other classes. The new class will be named after the other classes it uses.', $arguments
-      ),
+      '#description' => t('Create a new <a href="!interface"><code>@interface</code></a> that inherits its methods from other classes. The new class will be named after the other classes it uses.', $arguments),
       '#collapsible' => TRUE,
       '#collapsed' => TRUE,
       '#tree' => TRUE,
@@ -116,16 +122,12 @@ class AdminForm extends ConfigFormBase {
 
     $form['class']['format'] = array(
       '#type' => 'select',
-      '#title' => t(
-        'Class to use for the <a href="!format"><code>@format</code></a> method', $arguments
-      ),
+      '#title' => t('Class to use for the <a href="!format"><code>@format</code></a> method', $arguments),
       '#options' => $this->getMailsystemClassesList(TRUE),
     );
     $form['class']['mail'] = array(
       '#type' => 'select',
-      '#title' => t(
-        'Class to use for the <a href="!mail"><code>@mail</code></a> method', $arguments
-      ),
+      '#title' => t('Class to use for the <a href="!mail"><code>@mail</code></a> method', $arguments),
       '#options' => $this->getMailsystemClassesList(TRUE),
     );
     $form['identifier'] = array(
@@ -171,13 +173,21 @@ class AdminForm extends ConfigFormBase {
     $plugin_manager = \Drupal::service('plugin.manager.mailsystem');
     $config = $this->configFactory->get('mailsystem.settings');
 
-    // Save the default mail system.
-    if (isset($form_state['values']['mailsystem']['default_system'])) {
-      $class = $form_state['values']['mailsystem']['default_system'];
+    // Save the default mail formatter.
+    if (isset($form_state['values']['mailsystem']['default_formatter'])) {
+      $class = $form_state['values']['mailsystem']['default_formatter'];
       $plugin = $plugin_manager->getDefinition($class);
       if (isset($plugin)) {
-        //$this->configFactory->get('system.mail')->set('interface.default', $plugin['class'])->save();
-        $config->set('defaults.mailsystem', $form_state['values']['mailsystem']['default_system']);
+        $config->set('defaults.formatter', $class);
+      }
+    }
+
+    // Save the default mail sender.
+    if (isset($form_state['values']['mailsystem']['default_sender'])) {
+      $class = $form_state['values']['mailsystem']['default_sender'];
+      $plugin = $plugin_manager->getDefinition($class);
+      if (isset($plugin)) {
+        $config->set('defaults.sender', $class);
       }
     }
 
