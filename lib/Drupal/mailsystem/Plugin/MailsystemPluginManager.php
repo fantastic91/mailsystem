@@ -44,6 +44,9 @@ class MailsystemPluginManager extends DefaultPluginManager {
    * @throws \Exception If no class was found.
    */
   public function createInstance($plugin_id, array $configuration = array()) {
+    // Set the default plugin_id in case it is not set.
+    $plugin_id = isset($plugin_id) ? $plugin_id : 'php_mail';
+
     // First try to create a BasePlugin based Mailplugin, if this fails,
     // use the default method from \Drupal\Core\Mail\MailFactory::get()
     $definition = $this->getDefinition($plugin_id);

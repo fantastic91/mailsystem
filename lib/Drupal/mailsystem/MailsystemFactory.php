@@ -21,7 +21,7 @@ class MailsystemFactory extends MailFactory {
    *
    * @var \Drupal\mailsystem\Plugin\MailsystemPluginManager
    */
-  protected $manager;
+  protected $pluginManager;
 
   /**
    * Constructs a MailFactory object.
@@ -41,17 +41,43 @@ class MailsystemFactory extends MailFactory {
    */
   public function get($module, $key) {
     $id = $module . '_' . $key;
-
-    // Create a new instance within the PluginManager.
-    if (empty($this->instances[$id])) {
-      // @todo
-      $mailsystem = $this->mailConfig->get('defaults.mailsystem');
-      $instance = $this->pluginManager->createInstance($mailsystem);
-      if ($instance instanceof \Drupal\Core\Mail\MailInterface) {
-        $this->instances[$id] = $instance;
-      }
-    }
-    return $this->instances[$id];
+    return new Adapter(
+      $this->getFormatterPlugin($id),
+      $this->getSenderPlugin($id)
+    );
   }
 
+  /**
+   * Returns an object which can be used to format the mail before sending it.
+   *
+   * @param string $id
+   *   ID from the systems which wants to call the format()-function.
+   *
+   * @return \Drupal\Core\Mail\MailInterface
+   *   The Object to format the mail before sending it.
+   */
+  protected function getFormatterPlugin($id) {
+    $plugin = $this->mailConfig->get('plugins.' . $id . '.formatter');
+    if (count($this->pluginManager->getDefinition($plugin))) {
+      return $this->pluginManager->createInstance($plugin);
+    }
+    return $this->pluginManager->createInstance($this->mailConfig->get('defaults.formatter'));
+  }
+
+  /**
+   * Returns an object which can be used to send the mail through.
+   *
+   * @param string $id
+   *   ID from the systems which wants to call the mail()-function.
+   *
+   * @return \Drupal\Core\Mail\MailInterface
+   *   The Object to send the mail through.
+   */
+  protected function getSenderPlugin($id) {
+    $plugin = $this->mailConfig->get('plugins.' . $id . '.sender');
+    if (count($this->pluginManager->getDefinition($plugin))) {
+      return $this->pluginManager->createInstance($plugin);
+    }
+    return $this->pluginManager->createInstance($this->mailConfig->get('defaults.sender'));
+  }
 }
