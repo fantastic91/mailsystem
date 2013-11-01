@@ -7,6 +7,7 @@
 namespace Drupal\mailsystem\Plugin;
 
 use Drupal\Component\Plugin\Discovery\StaticDiscoveryDecorator;
+use Drupal\Component\Utility\String;
 use Drupal\Core\Plugin\DefaultPluginManager;
 
 /**
@@ -14,6 +15,11 @@ use Drupal\Core\Plugin\DefaultPluginManager;
  * @package Drupal\mailsystem\Plugin
  */
 class MailsystemPluginManager extends DefaultPluginManager {
+
+  /**
+   * The ID of the default mailer which is used in case there is none defined.
+   */
+  const DEFAULT_MAILER = 'php_mail';
 
   /**
    * Constructor.
@@ -30,7 +36,7 @@ class MailsystemPluginManager extends DefaultPluginManager {
    * @see MailsystemPluginManager::__construct()
    */
   public function registerDefinitions() {
-    $this->discovery->setDefinition('php_mail', array(
+    $this->discovery->setDefinition(self::DEFAULT_MAILER, array(
       'id' => 'php_mail',
       'label' => t('PhpMail'),
       'class' => '\Drupal\Core\Mail\PhpMail',
@@ -45,13 +51,16 @@ class MailsystemPluginManager extends DefaultPluginManager {
    */
   public function createInstance($plugin_id, array $configuration = array()) {
     // Set the default plugin_id in case it is not set.
-    $plugin_id = isset($plugin_id) ? $plugin_id : 'php_mail';
+    $plugin_id = isset($plugin_id) ? $plugin_id : self::DEFAULT_MAILER;
 
     // First try to create a BasePlugin based Mailplugin, if this fails,
     // use the default method from \Drupal\Core\Mail\MailFactory::get()
     $definition = $this->getDefinition($plugin_id);
     $reflection = new \ReflectionClass($definition['class']);
-    if ($reflection->implementsInterface('Drupal\Core\Mail\MailInterface')) {
+    if ($reflection->implementsInterface('Drupal\Core\Mail\MailInterface') ||
+      $reflection->implementsInterface('Drupal\mailsystem\FormatterInterface') ||
+      $reflection->implementsInterface('Drupal\mailsystem\SenderInterface')
+    ) {
       if ($reflection->isSubclassOf('Drupal\Component\Plugin\PluginBase')) {
         return parent::createInstance($plugin_id, $configuration);
       }
