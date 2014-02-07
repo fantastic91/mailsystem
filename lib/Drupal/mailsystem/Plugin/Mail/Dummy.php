@@ -4,7 +4,7 @@
 * Contains \Drupal\mailsystem\Plugin\mailsystem\Dummy.
 */
 
-namespace Drupal\mailsystem\Plugin\mailsystem;
+namespace Drupal\mailsystem\Plugin\Mail;
 
 use Drupal\Component\Plugin\PluginBase;
 use Drupal\Core\Annotation\Translation;
@@ -16,7 +16,8 @@ use Drupal\Core\Mail\MailInterface;
  *
  * @Plugin(
  *   id = "mailsystem_dummy",
- *   label = @Translation("Dummy Mailsystem Plugin")
+ *   label = @Translation("Dummy Mail-Plugin"),
+ *   description = @Translation("Dummy Plugin to debug the complete email on formatting and sending.")
  * )
  */
 class Dummy extends PluginBase implements MailInterface {
@@ -26,7 +27,11 @@ class Dummy extends PluginBase implements MailInterface {
    */
   public function format(array $message) {
     // TODO: Implement format() method.
-    dpm($message, 'format');
+    \debug(array(
+      'Subject' => $message['subject'],
+      'Body' => $message['body'],
+      'Headers' => $message['headers'],
+    ), 'Dummy: format()');
     return $message;
   }
 
@@ -35,7 +40,11 @@ class Dummy extends PluginBase implements MailInterface {
    */
   public function mail(array $message) {
     // TODO: Implement mail() method.
-    dpm($message, 'mail');
+    \debug(array(
+      'Subject' => $message['subject'],
+      'Body' => $message['body'],
+      'Headers' => $message['headers'],
+    ), 'Dummy: mail()');
     return TRUE;
   }
 }

@@ -42,13 +42,14 @@ function mailsystem_permission() {
 }
 
 /**
- * Implements hook_menu().
+ * Implements hook_menu_link_defaults().
  */
-function mailsystem_menu() {
-  $items['admin/config/system/mailsystem'] = array(
-    'title' => 'Mail System',
+function mailsystem_menu_link_defaults() {
+  $items['mailsystem.settings'] = array(
+    'link_title' => 'Mail System',
     'route_name' => 'mailsystem.settings',
     'description' => 'Configure per-module Mail System settings.',
+    'parent' => 'system.admin.config.system',
   );
   return $items;
 }
@@ -126,6 +127,8 @@ function mailsystem_default_methods() {
  *
  * @return
  *   The name of the newly-created class if successful; otherwise FALSE.
+ *
+ * @deprecated
  */
 function mailsystem_create_class($classes) {
   // Merge in defaults.
@@ -325,7 +328,7 @@ function &mailsystem_get_classes() {
 */
 function mailsystem_theme_registry_alter(&$theme_registry) {
   module_load_include('inc', 'mailsystem', 'mailsystem.theme');
-  return mailsystem_theme_theme_registry_alter($theme_registry);
+  //return mailsystem_theme_theme_registry_alter($theme_registry);
 }
 
 /**

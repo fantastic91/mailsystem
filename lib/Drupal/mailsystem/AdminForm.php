@@ -27,10 +27,6 @@ class AdminForm extends ConfigFormBase {
     $arguments = array(
       '!interface' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
       '@interface' => '\Drupal\Core\Mail\MailInterface',
-      '!interface_formatter' => '#',
-      '@interface_formatter' => '\Drupal\mailsystem\FormatterInterface',
-      '!interface_sender' => '#',
-      '@interface_sender' => '\Drupal\mailsystem\SenderInterface',
       '!format' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8'),
       '@format' => 'format()',
       '!mail' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8'),
@@ -53,14 +49,14 @@ class AdminForm extends ConfigFormBase {
     $form['mailsystem']['default_formatter'] = array(
       '#type' => 'select',
       '#title' => t('Select the default formatter plugin:'),
-      '#description' => t('Select the standard Mailer-Plugin for formatting the email before sending it. This is an instance from <a href="!interface">@interface</a> or <a href="!interface_formatter">@interface_formatter</a>', $arguments),
+      '#description' => t('Select the standard Plugin for formatting an email before sending it. This Plugin implements <a href="!interface">@interface</a>', $arguments),
       '#options' => $this->getFormatterPlugins(),
       '#default_value' => $config->get('defaults.formatter'),
     );
     $form['mailsystem']['default_sender'] = array(
       '#type' => 'select',
       '#title' => t('Select the default sender plugin:'),
-      '#description' => t('Select the standard Mailer-Plugin for sending the email after formatting it. This is an instance from <a href="!interface">@interface</a> or <a href="!interface_sender">@interface_sender</a>', $arguments),
+      '#description' => t('Select the standard Plugin for sending an email after formatting it. This Plugin implements <a href="!interface">@interface</a>', $arguments),
       '#options' => $this->getSenderPlugins(),
       '#default_value' => $config->get('defaults.sender'),
     );
@@ -73,94 +69,6 @@ class AdminForm extends ConfigFormBase {
       '#options' => $this->getThemesList(),
       '#default_value' => $config->get('defaults.theme'),
     );
-
-    // OLD
-    /*$descriptions = array();
-    foreach (system_rebuild_module_data() as $item) {
-      if ($item->status) {
-        $descriptions[$item->name] = (
-          empty($item->info['package'])
-            ? '' : $item->info['package']
-          ) . ' » ' . t('!module module', array('!module' => $item->info['name']));
-      }
-    }
-    asort($descriptions);
-
-    foreach (array_diff_key($this->getMailsystem(), $this->getDefaultMailsystem()) as $id => $class) {
-      // Separate $id into $module and $key.
-      $module = $id;
-      while ($module && empty($descriptions[$module])) {
-        // Remove a key from the end
-        $module = implode('_', explode('_', $module, -1));
-      }
-
-      // If an array key of the $mail_system variable is neither "default-system"
-      // nor begins with a module name, then it should be unset.
-      if (empty($module)) {
-        watchdog('mailsystem', "Removing bogus mail_system key %id.", array('%id' => $id), WATCHDOG_WARNING);
-        //unset($mail_system[$id]);
-        continue;
-      }
-
-      // Set $title to the human-readable module name.
-      $title = preg_replace('/^.* » /', '', $descriptions[$module]);
-      if ($key = substr($id, strlen($module) + 1)) {
-        $title .= " ($key key)";
-      }
-      $title .= ' class';
-      // @todo separate here between the .sender and the .formatter setting
-      $form['mailsystem'][$id] = array(
-        '#type' => 'select',
-        '#title' => $title,
-        '#options' => $this->getFormatterPlugins(),
-        '#default_value' => $class,
-      );
-    }
-
-    $form['class'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('New Class'),
-      '#description' => t('Create a new <a href="!interface"><code>@interface</code></a> that inherits its methods from other classes. The new class will be named after the other classes it uses.', $arguments),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#tree' => TRUE,
-    );
-
-    $form['class']['formatter'] = array(
-      '#type' => 'select',
-      '#title' => t('Plugin to use for formatting the mail.'),
-      '#options' => $this->getFormatterPlugins(TRUE),
-    );
-    $form['class']['sender'] = array(
-      '#type' => 'select',
-      '#title' => t('Plugin to use for sending the mail.'),
-      '#options' => $this->getSenderPlugins(TRUE),
-    );
-    $form['identifier'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('New Setting'),
-      '#description' => t('Add a new %module and %key to the settings list.',
-        array(
-          '%module' => 'module',
-          '%key' => 'key',
-        )
-      ),
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE,
-      '#tree' => TRUE,
-    );
-
-    array_unshift($descriptions, t('-- Select --'));
-    $form['identifier']['module'] = array(
-      '#type' => 'select',
-      '#title' => t('Module'),
-      '#options' => $descriptions,
-    );
-    $form['identifier']['key'] = array(
-      '#type' => 'textfield',
-      '#title' => t('Key'),
-      '#size' => 80,
-    );*/
 
     return parent::buildForm($form, $form_state);
   }
@@ -176,7 +84,7 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, array &$form_state) {
-    $plugin_manager = \Drupal::service('plugin.manager.mailsystem');
+    $plugin_manager = \Drupal::service('plugin.manager.mail');
     $config = $this->configFactory->get('mailsystem.settings');
 
     // Save the default mail formatter.
@@ -184,7 +92,7 @@ class AdminForm extends ConfigFormBase {
       $class = $form_state['values']['mailsystem']['default_formatter'];
       $plugin = $plugin_manager->getDefinition($class);
       if (isset($plugin)) {
-        $config->set('defaults.formatter', $class);
+          $config->set('defaults.formatter', $class);
       }
     }
 
@@ -204,29 +112,6 @@ class AdminForm extends ConfigFormBase {
 
     $config->save();
   }
-
-  /**
-   * Returns the default mail system id and name as an associative array.
-   *
-   * @return array
-   *   Array with the id from the mail system and the name as value.
-   */
-  /*protected function getDefaultMailsystem() {
-    $config = $this->configFactory->get('mailsystem.settings');
-    return array($config->get('mailsystem_id') => $config->get('mailsystem_name'));
-  }
-
-
-  protected function getMailsystem() {
-    $config = $this->configFactory->get('mailsystem.settings');
-    $classes = $this->getFormatterPlugins();
-    if (isset($classes[$config->get('mailsystem')])) {
-      return array(
-        $config->get('mailsystem') => $classes[$config->get('mailsystem')]
-      );
-    }
-    return $this->getDefaultMailsystem();
-  }*/
 
   /**
    * Returns a list with all formatter plugins.
@@ -251,12 +136,9 @@ class AdminForm extends ConfigFormBase {
     }
 
     // Append all MailPlugins.
-    $plugin_manager = \Drupal::service('plugin.manager.mailsystem');
+    $plugin_manager = \Drupal::service('plugin.manager.mail');
     foreach ($plugin_manager->getDefinitions() as $v) {
-      $interfaces = class_implements($v['class']);
-      if (isset($interfaces['Drupal\Core\Mail\MailInterface']) || isset($interfaces['Drupal\mailsystem\FormatterInterface'])) {
-        $list[$v['id']] = $v['label'];
-      }
+      $list[$v['id']] = $v['label'];
     }
     return $list;
   }
@@ -284,12 +166,9 @@ class AdminForm extends ConfigFormBase {
     }
 
     // Append all MailPlugins.
-    $plugin_manager = \Drupal::service('plugin.manager.mailsystem');
+    $plugin_manager = \Drupal::service('plugin.manager.mail');
     foreach ($plugin_manager->getDefinitions() as $v) {
-      $interfaces = class_implements($v['class']);
-      if (isset($interfaces['Drupal\Core\Mail\MailInterface']) || isset($interfaces['Drupal\mailsystem\SenderInterface'])) {
-        $list[$v['id']] = $v['label'];
-      }
+      $list[$v['id']] = $v['label'];
     }
     return $list;
   }

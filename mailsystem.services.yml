@@ -1,4 +1,0 @@
-services:
-  plugin.manager.mailsystem:
-    class: Drupal\mailsystem\Plugin\MailsystemPluginManager
-    arguments: ['@container.namespaces']

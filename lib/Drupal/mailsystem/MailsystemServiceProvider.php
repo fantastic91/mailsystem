@@ -27,11 +27,9 @@ class MailsystemServiceProvider implements ServiceProviderInterface, ServiceModi
    * {@inheritdoc}
    */
   public function alter(ContainerBuilder $container) {
-    // Overrides mail-factory class to use own mail plugins.
-    $definition = $container->getDefinition('mail.factory');
-    $definition->addArgument(new Reference('plugin.manager.mailsystem'));
-    $definition->setClass('Drupal\mailsystem\MailsystemFactory');
+    // Overrides mail-factory class to use our own mail manager.
+    $container->getDefinition('plugin.manager.mail')
+      ->setClass('Drupal\mailsystem\MailsystemManager');
   }
 
 }
-
