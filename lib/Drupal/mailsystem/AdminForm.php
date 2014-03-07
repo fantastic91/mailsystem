@@ -65,13 +65,13 @@ class AdminForm extends ConfigFormBase {
     );
 
     // Default theme for formatting emails.
-    //$form['mailsystem']['default_theme'] = array(
-    //  '#type' => 'select',
-    //  '#title' => t('Theme to render the emails:'),
-    //  '#description' => t('Select the theme that will be used to render the emails. This can be either the current theme, the default theme, the domain theme or any active theme.'),
-    //  '#options' => $this->getThemesList(),
-    //  '#default_value' => $config->get('defaults.theme'),
-    //);
+    $form['mailsystem']['default_theme'] = array(
+      '#type' => 'select',
+      '#title' => t('Theme to render the emails:'),
+      '#description' => t('Select the theme that will be used to render emails which are configured for this. This can be either the current theme, the default theme, the domain theme or any active theme.'),
+      '#options' => $this->getThemesList(),
+      '#default_value' => $config->get('defaults.theme'),
+    );
 
     // Fieldset for custom module configuration.
     $form['custom'] = array(
@@ -106,22 +106,64 @@ class AdminForm extends ConfigFormBase {
       '#options' => $this->getSenderPlugins(TRUE),
       '#default_value' => 'none',
     );
-    //$form['custom']['custom_theme'] = array(
-    //  '#type' => 'select',
-    //  '#title' => t('Theme:'),
-    //  '#options' => $this->getThemesList(),
-    //  '#default_value' => $config->get('defaults.theme'),
-    //);
+
+    // Get all configured modules and show them in a list.
+    $modules = $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG);
+    $modules = is_null($modules) ? array() : $modules;
+    $options = array();
+    foreach ($modules as $module => $conf) {
+      if (is_array($conf)) {
+        // Main table structure.
+        $mod = array(
+          'module' => ucfirst($module),
+          'formatter' => '',
+          'sender' => '',
+          'key' => '',
+        );
+
+        foreach ($conf as $key => $val) {
+          $module_key = $module . '.' . $key;
+
+          // Even we have now a key which defines the type or we have an array
+          // with the types as keys - in both cases, the values are the Plugins.
+          switch ($key) {
+            case MailsystemManager::MAILSYSTEM_TYPE_FORMATTING:
+              $mod['formatter'] = $this->getPluginLabel($val);
+              break;
+
+            case MailsystemManager::MAILSYSTEM_TYPE_SENDING:
+              $mod['sender'] = $this->getPluginLabel($val);
+              break;
+
+            default:
+              if (is_array($val)) {
+                $mod['key'] = ($key === 'none') ? '' : $key;
+                if (isset($val[MailsystemManager::MAILSYSTEM_TYPE_FORMATTING])) {
+                  $mod['formatter'] = $this->getPluginLabel($val[MailsystemManager::MAILSYSTEM_TYPE_FORMATTING]);
+                }
+                if (isset($val[MailsystemManager::MAILSYSTEM_TYPE_SENDING])) {
+                  $mod['sender'] = $this->getPluginLabel($val[MailsystemManager::MAILSYSTEM_TYPE_SENDING]);
+                }
+              }
+              break;
+          }
+          $options[$module_key] = $mod;
+        }
+      }
+    }
 
     // Show and change all custom configurations.
     $form['custom']['modules'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Custom module configurations'),
-      '#collapsible' => FALSE,
-      '#tree' => TRUE,
+      '#type' => 'tableselect',
+      '#header' => array(
+        'module' => t('Module'),
+        'key' => t('Key'),
+        'formatter' => t('Formatter'),
+        'sender' => t('Sender'),
+      ),
+      '#options' => $options,
+      '#empty' => t('No special configuration yet...'),
     );
-
-    $config_data = $this->configFactory->get('');
 
     return parent::buildForm($form, $form_state);
   }
@@ -130,7 +172,6 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, array &$form_state) {
-
   }
 
   /**
@@ -172,20 +213,29 @@ class AdminForm extends ConfigFormBase {
 
       // Create at least two configuration entries:
       // One for the sending and one for the formatting.
+      // The configuration entries for the modules are inside the "modules"
+      // containment, use MailsystemManager::MAILSYSTEM_MODULES_CONFIG for this.
       //
       // The configuration entries can be:
-      //  * module.key.type -> Plugin for a special mail and send/format function
-      //  * module.key      -> Global plugin for a special mail.
-      //  * module.type     -> Global plugin for the send/format function
-      //  * module          -> Global plugin for the module
-      $config_key = $module;
-      $config_key .= !empty($key) ? '.' . $key : '';
+      // modules.module.key.type -> Plugin for a special mail and send/format function
+      // modules.module.type     -> Global plugin for the send/format function
+      $config_key = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.' . $module;
+      $config_key .= !empty($key) ? '.' . $key : '.none';
 
       if ($formatter != 'none') {
-        $this->set($config_key . MailsystemManager::MAILSYSTEM_TYPE_FORMATTING, $formatter);
+        $config->set($config_key . '.' . MailsystemManager::MAILSYSTEM_TYPE_FORMATTING, $formatter);
       }
       if ($sender != 'none') {
-        $this->set($config_key . MailsystemManager::MAILSYSTEM_TYPE_SENDING, $sender);
+        $config->set($config_key . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING, $sender);
+      }
+    }
+
+    // If there are some selections in the tableselect, remove them.
+    if (isset($form_state['values']['custom']['modules']) && is_array($form_state['values']['custom']['modules'])) {
+      foreach ($form_state['values']['custom']['modules'] as $key => $val) {
+        if ($key === $val) {
+          $config->clear(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.' . $key);
+        }
       }
     }
 
@@ -291,6 +341,20 @@ class AdminForm extends ConfigFormBase {
       $list[$module] = ucfirst($module);
     }
     return $list;
+  }
+
+  /**
+   * Returns a label from a mail plugin.
+   *
+   * @param string $module
+   *   A module name to the the label from.
+   *
+   * @return string
+   *   The label from a mail plugin.
+   */
+  protected function getPluginLabel($module) {
+    $definition = \Drupal::service('plugin.manager.mail')->getDefinition($module);
+    return isset($definition['label']) ? $definition['label'] : t('Unknown Plugin');
   }
 
 }
