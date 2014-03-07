@@ -73,7 +73,7 @@ class MailsystemManager extends MailManager {
     $plugin_id = NULL;
 
     // List of message ids which can be configured.
-    // @todo Check if this priorization is ok or if it should be changed.
+    // @todo Check if this priorisation is ok or if it should be changed.
     $message_id_list = array(
       $module . '.' . $key . '.' . $type,
       $module . '.' . $key,
