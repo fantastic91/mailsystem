@@ -23,6 +23,7 @@ class MailsystemManager extends MailManager {
    */
   const MAILSYSTEM_TYPE_SENDING = 'sender';
   const MAILSYSTEM_TYPE_FORMATTING = 'formatter';
+  const MAILSYSTEM_MODULES_CONFIG = 'modules';
 
   /**
    * Config object for mailsystem configuration.
@@ -73,12 +74,10 @@ class MailsystemManager extends MailManager {
     $plugin_id = NULL;
 
     // List of message ids which can be configured.
-    // @todo Check if this priorisation is ok or if it should be changed.
     $message_id_list = array(
-      $module . '.' . $key . '.' . $type,
-      $module . '.' . $key,
-      $module . '.' . $type,
-      $module,
+      self::MAILSYSTEM_MODULES_CONFIG . '.' . $module . '.' . $key . '.' . $type,
+      self::MAILSYSTEM_MODULES_CONFIG . '.' . $module . '.none.' . $type,
+      self::MAILSYSTEM_MODULES_CONFIG . '.' . $module . '.' . $type,
       'defaults.' . $type,
       'defaults'
     );
