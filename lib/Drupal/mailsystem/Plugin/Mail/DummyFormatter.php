@@ -6,21 +6,18 @@
 
 namespace Drupal\mailsystem\Plugin\Mail;
 
-use Drupal\Component\Plugin\PluginBase;
-use Drupal\Core\Annotation\Translation;
-use Drupal\Component\Annotation\Plugin;
 use Drupal\Core\Mail\MailInterface;
 
 /**
  * Provides a 'Dummy' plugin to format emails.
  *
- * @Plugin(
+ * @Mail(
  *   id = "mailsystem_dummyformatter",
  *   label = @Translation("Dummy Mailsystem formatter Plugin"),
  *   description = @Translation("Dummy Plugin to debug the email on formatting ,does not sending anything.")
  * )
  */
-class DummyFormatter extends PluginBase implements MailInterface {
+class DummyFormatter implements MailInterface {
 
   /**
    * {@inheritdoc}
