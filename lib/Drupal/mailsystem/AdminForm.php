@@ -11,10 +11,55 @@
 
 namespace Drupal\mailsystem;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
+use Drupal\Core\Extension\ModuleHandlerInterface;
+use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
 class AdminForm extends ConfigFormBase {
+
+  /**
+   * @var MailsystemManager
+   */
+  protected $mailManager;
+
+  /**
+   * @var \Drupal\Core\Extension\ModuleHandlerInterface
+   */
+  protected $moduleHandler;
+
+  /**
+   * @var \Drupal\Core\Extension\ThemeHandlerInterface
+   */
+  protected $themeHandler;
+
+  /**
+   * Constructs a \Drupal\system\ConfigFormBase object.
+   *
+   * @param \Drupal\Core\Config\ConfigFactoryInterface $config_factory
+   *   The factory for configuration objects.
+   */
+  public function __construct(ConfigFactoryInterface $config_factory, MailsystemManager $mail_manager, ModuleHandlerInterface $module_handler, ThemeHandlerInterface $theme_handler) {
+    parent::__construct($config_factory);
+    $this->mailManager = $mail_manager;
+    $this->moduleHandler = $module_handler;
+    $this->themeHandler = $theme_handler;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('config.factory'),
+      $container->get('plugin.manager.mail'),
+      $container->get('module_handler'),
+      $container->get('theme_handler')
+    );
+  }
+
   /**
    * {@inheritdoc}
    */
@@ -26,7 +71,6 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, array &$form_state) {
-    // @todo: Make this as a property? Annotated or is there already something like this?
     $config = $this->configFactory->get('mailsystem.settings');
 
     $arguments = array(
@@ -41,7 +85,7 @@ class AdminForm extends ConfigFormBase {
     // Default mail system.
     $form['mailsystem'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Default Mail System'),
+      '#title' => $this->t('Default Mail System'),
       '#collapsible' => FALSE,
       '#tree' => TRUE,
     );
@@ -49,8 +93,8 @@ class AdminForm extends ConfigFormBase {
     // Default formatter plugin.
     $form['mailsystem']['default_formatter'] = array(
       '#type' => 'select',
-      '#title' => t('Select the default formatter plugin:'),
-      '#description' => t('Select the standard Plugin for formatting an email before sending it. This Plugin implements <a href="!interface">@interface</a> and in special the <a href="!format">@format</a> function.', $arguments),
+      '#title' => $this->t('Select the default formatter plugin:'),
+      '#description' => $this->t('Select the standard Plugin for formatting an email before sending it. This Plugin implements <a href="!interface">@interface</a> and in special the <a href="!format">@format</a> function.', $arguments),
       '#options' => $this->getFormatterPlugins(),
       '#default_value' => $config->get('defaults.formatter'),
     );
@@ -58,8 +102,8 @@ class AdminForm extends ConfigFormBase {
     // Default sender plugin.
     $form['mailsystem']['default_sender'] = array(
       '#type' => 'select',
-      '#title' => t('Select the default sender plugin:'),
-      '#description' => t('Select the standard Plugin for sending an email after formatting it. This Plugin implements <a href="!interface">@interface</a> and in special the <a href="!mail">@mail</a> function.', $arguments),
+      '#title' => $this->t('Select the default sender plugin:'),
+      '#description' => $this->t('Select the standard Plugin for sending an email after formatting it. This Plugin implements <a href="!interface">@interface</a> and in special the <a href="!mail">@mail</a> function.', $arguments),
       '#options' => $this->getSenderPlugins(),
       '#default_value' => $config->get('defaults.sender'),
     );
@@ -67,8 +111,8 @@ class AdminForm extends ConfigFormBase {
     // Default theme for formatting emails.
     $form['mailsystem']['default_theme'] = array(
       '#type' => 'select',
-      '#title' => t('Theme to render the emails:'),
-      '#description' => t('Select the theme that will be used to render emails which are configured for this. This can be either the current theme, the default theme, the domain theme or any active theme.'),
+      '#title' => $this->t('Theme to render the emails:'),
+      '#description' => $this->t('Select the theme that will be used to render emails which are configured for this. This can be either the current theme, the default theme, the domain theme or any active theme.'),
       '#options' => $this->getThemesList(),
       '#default_value' => $config->get('defaults.theme'),
     );
@@ -76,7 +120,7 @@ class AdminForm extends ConfigFormBase {
     // Fieldset for custom module configuration.
     $form['custom'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Custom module configurations'),
+      '#title' => $this->t('Custom module configurations'),
       '#collapsible' => FALSE,
       '#tree' => TRUE,
     );
@@ -84,25 +128,25 @@ class AdminForm extends ConfigFormBase {
     // Configuration for a new module.
     $form['custom']['custom_module'] = array(
       '#type' => 'select',
-      '#title' => t('Module:'),
+      '#title' => $this->t('Module:'),
       '#options' => $this->getModulesList(),
       '#default_value' => '',
     );
     $form['custom']['custom_module_key'] = array(
       '#type' => 'textfield',
-      '#title' => t('Key:'),
-      '#description' => t('This is a special value which is used to distinguish between different types of emails sent out by a module.<br/>Currently there is no way to extract them automatically, so you have to check the code and the hook_mail() function calls.'),
+      '#title' => $this->t('Key:'),
+      '#description' => $this->t('This is a special value which is used to distinguish between different types of emails sent out by a module.<br/>Currently there is no way to extract them automatically, so you have to check the code and the hook_mail() function calls.'),
       '#default_value' => '',
     );
     $form['custom']['custom_formatter'] = array(
       '#type' => 'select',
-      '#title' => t('Formatter plugin:'),
+      '#title' => $this->t('Formatter plugin:'),
       '#options' => $this->getFormatterPlugins(TRUE),
       '#default_value' => 'none',
     );
     $form['custom']['custom_sender'] = array(
       '#type' => 'select',
-      '#title' => t('Sender plugin:'),
+      '#title' => $this->t('Sender plugin:'),
       '#options' => $this->getSenderPlugins(TRUE),
       '#default_value' => 'none',
     );
@@ -156,13 +200,13 @@ class AdminForm extends ConfigFormBase {
     $form['custom']['modules'] = array(
       '#type' => 'tableselect',
       '#header' => array(
-        'module' => t('Module'),
-        'key' => t('Key'),
-        'formatter' => t('Formatter'),
-        'sender' => t('Sender'),
+        'module' => $this->t('Module'),
+        'key' => $this->t('Key'),
+        'formatter' => $this->t('Formatter'),
+        'sender' => $this->t('Sender'),
       ),
       '#options' => $options,
-      '#empty' => t('No special configuration yet...'),
+      '#empty' => $this->t('No special configuration yet...'),
     );
 
     return parent::buildForm($form, $form_state);
@@ -178,13 +222,12 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, array &$form_state) {
-    $plugin_manager = \Drupal::service('plugin.manager.mail');
     $config = $this->configFactory->get('mailsystem.settings');
 
     // Set the default mail formatter.
     if (isset($form_state['values']['mailsystem']['default_formatter'])) {
       $class = $form_state['values']['mailsystem']['default_formatter'];
-      $plugin = $plugin_manager->getDefinition($class);
+      $plugin = $this->mailManager->getDefinition($class);
       if (isset($plugin)) {
         $config->set('defaults.formatter', $class);
       }
@@ -193,7 +236,7 @@ class AdminForm extends ConfigFormBase {
     // Set the default mail sender.
     if (isset($form_state['values']['mailsystem']['default_sender'])) {
       $class = $form_state['values']['mailsystem']['default_sender'];
-      $plugin = $plugin_manager->getDefinition($class);
+      $plugin = $this->mailManager->getDefinition($class);
       if (isset($plugin)) {
         $config->set('defaults.sender', $class);
       }
@@ -261,12 +304,11 @@ class AdminForm extends ConfigFormBase {
 
     // Add the "select" as first entry with the default mailsystem id as key.
     if (filter_var($showSelect, FILTER_VALIDATE_BOOLEAN)) {
-      $list['none'] = t('-- Select --');
+      $list['none'] = $this->t('-- Select --');
     }
 
     // Append all MailPlugins.
-    $plugin_manager = \Drupal::service('plugin.manager.mail');
-    foreach ($plugin_manager->getDefinitions() as $v) {
+    foreach ($this->mailManager->getDefinitions() as $v) {
       $list[$v['id']] = $v['label'];
     }
     return $list;
@@ -290,12 +332,11 @@ class AdminForm extends ConfigFormBase {
 
     // Add the "select" as first entry with the default mailsystem id as key.
     if (filter_var($showSelect, FILTER_VALIDATE_BOOLEAN)) {
-      $list['none'] = t('-- Select --');
+      $list['none'] = $this->t('-- Select --');
     }
 
     // Append all MailPlugins.
-    $plugin_manager = \Drupal::service('plugin.manager.mail');
-    foreach ($plugin_manager->getDefinitions() as $v) {
+    foreach ($this->mailManager->getDefinitions() as $v) {
       $list[$v['id']] = $v['label'];
     }
     return $list;
@@ -310,13 +351,13 @@ class AdminForm extends ConfigFormBase {
    */
   protected function getThemesList() {
     $theme_options = array(
-      'current' => t('Current'),
-      'default' => t('Default')
+      'current' => $this->t('Current'),
+      'default' => $this->t('Default')
     );
-    if (\Drupal::moduleHandler()->moduleExists('domain_theme')) {
-      $theme_options['domain'] = t('Domain Theme');
+    if ($this->moduleHandler->moduleExists('domain_theme')) {
+      $theme_options['domain'] = $this->t('Domain Theme');
     }
-    foreach (\Drupal::service('theme_handler')->listInfo() as $name => $theme) {
+    foreach ($this->themeHandler->listInfo() as $name => $theme) {
       if ($theme->status === 1) {
         $theme_options[$name] = $theme->info['name'];
       }
@@ -335,9 +376,9 @@ class AdminForm extends ConfigFormBase {
    */
   protected function getModulesList() {
     $list = array(
-      'none' => t('-- Select --'),
+      'none' => $this->t('-- Select --'),
     );
-    foreach (\Drupal::moduleHandler()->getImplementations('mail') as $module) {
+    foreach ($this->moduleHandler->getImplementations('mail') as $module) {
       $list[$module] = ucfirst($module);
     }
     return $list;
@@ -353,8 +394,8 @@ class AdminForm extends ConfigFormBase {
    *   The label from a mail plugin.
    */
   protected function getPluginLabel($module) {
-    $definition = \Drupal::service('plugin.manager.mail')->getDefinition($module);
-    return isset($definition['label']) ? $definition['label'] : t('Unknown Plugin');
+    $definition = $this->mailManager->getDefinition($module);
+    return isset($definition['label']) ? $definition['label'] : $this->t('Unknown Plugin');
   }
 
 }
