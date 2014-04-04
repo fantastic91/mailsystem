@@ -4,6 +4,6 @@ description: 'Provides a user interface for per-module and site-wide mail_system
 php: 5.3
 type: module
 core: 8.x
-configure: admin/config/system/mailsystem
+configure: mailsystem.config
 dependencies:
  - filter

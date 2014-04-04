@@ -1,0 +1,6 @@
+mailsystem.config:
+  title: Mailsystem
+  route_name: mailsystem.settings
+  parent: system.admin_config_system
+  description: 'Global mailsystem configuration.'
+  weight: -20
