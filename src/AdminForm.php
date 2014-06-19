@@ -71,7 +71,7 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, array &$form_state) {
-    $config = $this->configFactory->get('mailsystem.settings');
+    $config = $this->config('mailsystem.settings');
 
     $arguments = array(
       '!interface' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
@@ -222,7 +222,7 @@ class AdminForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, array &$form_state) {
-    $config = $this->configFactory->get('mailsystem.settings');
+    $config = $this->config('mailsystem.settings');
 
     // Set the default mail formatter.
     if (isset($form_state['values']['mailsystem']['default_formatter'])) {
