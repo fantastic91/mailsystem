@@ -11,7 +11,9 @@ use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\Mail\MailManager;
+use Drupal\Core\StringTranslation\TranslationInterface;
 
 /**
  * Factory for creating mail system objects based on BasePlugin's.
@@ -35,8 +37,8 @@ class MailsystemManager extends MailManager {
   /**
    * {@inheritdoc}
    */
-  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, LanguageManagerInterface $language_manager, ModuleHandlerInterface $module_handler, ConfigFactoryInterface $config_factory) {
-    parent::__construct($namespaces, $cache_backend, $language_manager, $module_handler, $config_factory);
+  public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler, ConfigFactoryInterface $config_factory, LoggerChannelFactoryInterface $logger_factory, TranslationInterface $string_translation) {
+    parent::__construct($namespaces, $cache_backend, $module_handler, $config_factory, $logger_factory, $string_translation);
     $this->mailsystemConfig = $config_factory->get('mailsystem.settings');
   }
 
