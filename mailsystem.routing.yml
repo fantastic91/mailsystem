@@ -4,4 +4,4 @@ mailsystem.settings:
     _form: 'Drupal\mailsystem\AdminForm'
     _title: 'Configure the Mailsystem'
   requirements:
-    _permission: 'administer mailsystem'
+    _permission: 'administer_mailsystem'

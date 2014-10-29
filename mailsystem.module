@@ -6,26 +6,6 @@
  */
 
 /**
- * Implements hook_permission().
- *
- * Defines a permission for managing the mail_system variable.
- */
-function mailsystem_permission() {
-  return array(
-    'administer mailsystem' => array(
-      'title' => t('Administer Mail System'),
-      'description' => t(
-        'Select the default, per-module, and per-mailing <a href="!interface"><code>@interface</code></a> to use for formatting and sending email messages.',
-        array(
-          '!interface' => url('http://api.drupal.org/api/drupal/includes--mail.inc/interface/MailSystemInterface/8'),
-          '@interface' => 'MailSystemInterface',
-        )
-      ),
-    ),
-  );
-}
-
-/**
  * Implements hook_menu_link_defaults().
  */
 function mailsystem_menu_link_defaults() {
