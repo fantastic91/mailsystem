@@ -15,6 +15,7 @@ use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
+use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -70,15 +71,15 @@ class AdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function buildForm(array $form, array &$form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $config = $this->config('mailsystem.settings');
 
     $arguments = array(
-      '!interface' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
+      '!interface' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
       '@interface' => '\Drupal\Core\Mail\MailInterface',
-      '!format' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8'),
+      '!format' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8'),
       '@format' => 'format()',
-      '!mail' => url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8'),
+      '!mail' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8'),
       '@mail' => 'mail()',
     );
 
@@ -215,18 +216,18 @@ class AdminForm extends ConfigFormBase {
   /**
    * {@inheritdoc}
    */
-  public function validateForm(array &$form, array &$form_state) {
+  public function validateForm(array &$form, FormStateInterface $form_state) {
   }
 
   /**
    * {@inheritdoc}
    */
-  public function submitForm(array &$form, array &$form_state) {
+  public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->config('mailsystem.settings');
 
     // Set the default mail formatter.
-    if (isset($form_state['values']['mailsystem']['default_formatter'])) {
-      $class = $form_state['values']['mailsystem']['default_formatter'];
+    if ($form_state->hasValue(['mailsystem', 'default_formatter'])) {
+      $class = $form_state->getValue(['mailsystem', 'default_formatter']);
       $plugin = $this->mailManager->getDefinition($class);
       if (isset($plugin)) {
         $config->set('defaults.formatter', $class);
@@ -234,8 +235,8 @@ class AdminForm extends ConfigFormBase {
     }
 
     // Set the default mail sender.
-    if (isset($form_state['values']['mailsystem']['default_sender'])) {
-      $class = $form_state['values']['mailsystem']['default_sender'];
+    if ($form_state->hasValue(['mailsystem', 'default_sender'])) {
+      $class = $form_state->getValue(['mailsystem', 'default_sender']);
       $plugin = $this->mailManager->getDefinition($class);
       if (isset($plugin)) {
         $config->set('defaults.sender', $class);
@@ -243,16 +244,16 @@ class AdminForm extends ConfigFormBase {
     }
 
     // Set the default theme.
-    if (isset($form_state['values']['mailsystem']['default_theme'])) {
-      $config->set('defaults.theme', $form_state['values']['mailsystem']['default_theme']);
+    if ($form_state->hasValue(['mailsystem', 'default_theme'])) {
+      $config->set('defaults.theme', $form_state->getValue(['mailsystem', 'default_theme']));
     }
 
     // Create a new module configuration if a module is selected.
-    if (isset($form_state['values']['custom']['custom_module']) && ($form_state['values']['custom']['custom_module'] != 'none')) {
-      $module = $form_state['values']['custom']['custom_module'];
-      $key = $form_state['values']['custom']['custom_module_key'];
-      $formatter = $form_state['values']['custom']['custom_formatter'];
-      $sender = $form_state['values']['custom']['custom_sender'];
+    if ($form_state->hasValue(['custom', 'custom_module']) && ($form_state->getValue(['custom', 'custom_module']) != 'none')) {
+      $module = $form_state->getValue(['custom', 'custom_module']);
+      $key = $form_state->getValue(['custom', 'custom_module_key']);
+      $formatter = $form_state->getValue(['custom', 'custom_formatter']);
+      $sender = $form_state->getValue(['custom', 'custom_sender']);
 
       // Create at least two configuration entries:
       // One for the sending and one for the formatting.
@@ -274,8 +275,8 @@ class AdminForm extends ConfigFormBase {
     }
 
     // If there are some selections in the tableselect, remove them.
-    if (isset($form_state['values']['custom']['modules']) && is_array($form_state['values']['custom']['modules'])) {
-      foreach ($form_state['values']['custom']['modules'] as $key => $val) {
+    if ($form_state->hasValue(['custom', 'modules']) && is_array($form_state->getValue(['custom', 'modules']))) {
+      foreach ($form_state->getValue(['custom', 'modules']) as $key => $val) {
         if ($key === $val) {
           $config->clear(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.' . $key);
         }
