@@ -1,7 +1,9 @@
 <?php
 /**
  * @file
- * Contains \Drupal\mailsystem\Tests\AdminFormTest.
+ * MailsystemManager test
+ *
+ * @ingroup mailsystem
  */
 
 namespace Drupal\mailsystem\Tests;
@@ -11,6 +13,11 @@ use Drupal\mailsystem\AdminForm;
 use Drupal\mailsystem\MailsystemManager;
 use Drupal\Tests\UnitTestCase;
 
+/**
+ * Test the MailsystemManager to return valid plugin instances based on teh configuration.
+ *
+ * @group mailsystem
+ */
 class MailsystemManagerTest extends UnitTestCase {
   /**
    * Stores the configuration factory to test with.
@@ -23,17 +30,6 @@ class MailsystemManagerTest extends UnitTestCase {
    * @var \Drupal\mailsystem\MailsystemManager
    */
   protected $mailManager;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'MailsystemManager test',
-      'description' => 'Test the MailsystemManager to return valid plugin instances based on teh configuration.',
-      'group' => 'Mailsystem'
-    );
-  }
 
   /**
    * {@inheritdoc}
