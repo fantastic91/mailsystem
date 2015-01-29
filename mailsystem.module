@@ -46,7 +46,8 @@ function mailsystem_get_mail_theme() {
       break;
     case 'domain':
       // Fetch the theme for the current domain.
-      if (\Drupal::moduleHandler()->moduleExists('domain_theme')) {
+      // @todo: Reimplement this as soon as module port or similiar module is around.
+      if (FALSE && \Drupal::moduleHandler()->moduleExists('domain_theme')) {
         // Assign the selected theme, based on the active domain.
         global $_domain;
         $domain_theme = domain_theme_lookup($_domain['domain_id']);
