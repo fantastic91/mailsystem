@@ -1,9 +1,7 @@
 <?php
 /**
  * @file
- * Mailsystem Adapter test.
- *
- * @ingroup mailsystem
+ * Contains \Drupal\mailsystem\Tests\AdapterTest.
  */
 
 namespace Drupal\mailsystem\Tests;

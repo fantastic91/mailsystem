@@ -1,9 +1,7 @@
 <?php
 /**
  * @file
- * MailsystemManager test
- *
- * @ingroup mailsystem
+ * Contains \Drupal\mailsystem\Tests\MailsystemManagerTest.
  */
 
 namespace Drupal\mailsystem\Tests;

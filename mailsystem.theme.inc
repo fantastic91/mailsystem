@@ -9,7 +9,7 @@
 * Implements hook_theme_registry_alter().
 */
 function mailsystem_theme_theme_registry_alter(&$theme_registry) {
-  global $theme_key;
+  $theme_key = \Drupal::theme()->getActiveTheme()->getName();
   static $recursion_prevention = FALSE;
 
   // Prevent recursive execution.
@@ -21,7 +21,8 @@ function mailsystem_theme_theme_registry_alter(&$theme_registry) {
 
   // Only take action if the mailsystem theme is not the current theme.
   if ($mailsystem_theme != $theme_key) {
-    $themes = list_themes();
+    $theme_handler = \Drupal::service('theme_handler');
+    $themes = $theme_handler->listInfo();
     // Get the mailsystem theme to be used for rendering emails.
     if (isset($themes[$mailsystem_theme])) {
       $theme = clone $themes[$mailsystem_theme];

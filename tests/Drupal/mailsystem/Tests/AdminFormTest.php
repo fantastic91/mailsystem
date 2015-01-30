@@ -1,9 +1,7 @@
 <?php
 /**
  * @file
- * Mailsystem Administration form.
- *
- * @ingroup mailsystem
+ * Contains \Drupal\mailsystem\Tests\AdminFormTest.
  */
 
 namespace Drupal\mailsystem\Tests;
