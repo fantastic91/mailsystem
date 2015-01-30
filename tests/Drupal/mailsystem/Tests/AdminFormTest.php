@@ -11,6 +11,11 @@ use Drupal\mailsystem\AdminForm;
 use Drupal\mailsystem\MailsystemManager;
 use Drupal\Tests\UnitTestCase;
 
+/**
+ * Test the Administration form from the mailsystem, especially the various collection functions.
+ *
+ * @group mailsystem
+ */
 class AdminFormTest extends UnitTestCase {
 
   /**
@@ -34,17 +39,6 @@ class AdminFormTest extends UnitTestCase {
    * @var \Drupal\Core\Extension\ThemeHandlerInterface
    */
   protected $themeHandler;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Mailsystem Administration form',
-      'description' => 'Test the Administration form from the mailsystem, especially the various collection functions.',
-      'group' => 'Mailsystem'
-    );
-  }
 
   /**
    * {@inheritdoc}

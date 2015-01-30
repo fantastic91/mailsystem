@@ -10,7 +10,11 @@ use Drupal\mailsystem\Adapter;
 use Drupal\mailsystem\Plugin\Mail\Test;
 use Drupal\Tests\UnitTestCase;
 
-
+/**
+ * Test the adapter class from mailsystem which is used as the mail plugin.
+ *
+ * @group mailsystem
+ */
 class AdapterTest extends UnitTestCase {
 
   /**
@@ -33,17 +37,6 @@ class AdapterTest extends UnitTestCase {
    * @var \Drupal\mailsystem\Plugin\Mail\Test
    */
   protected $formatter;
-
-  /**
-   * {@inheritdoc}
-   */
-  public static function getInfo() {
-    return array(
-      'name' => 'Mailsystem Adapter test',
-      'description' => 'Test the adapter class from mailsystem which is used as the mail plugin.',
-      'group' => 'Mailsystem'
-    );
-  }
 
   /**
    * {@inheritdoc}
