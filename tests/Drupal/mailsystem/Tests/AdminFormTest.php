@@ -7,6 +7,7 @@
 namespace Drupal\mailsystem\Tests;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
+use Drupal\Core\Form\FormState;
 use Drupal\mailsystem\AdminForm;
 use Drupal\mailsystem\MailsystemManager;
 use Drupal\Tests\UnitTestCase;
@@ -57,7 +58,7 @@ class AdminFormTest extends UnitTestCase {
     // Create the config factory we use in the submitForm() function.
     $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
     $this->configFactory->expects($this->any())
-      ->method('get')
+      ->method('getEditable')
       ->will($this->returnValue($configMock));
 
     // Create a MailsystemManager mock
@@ -214,34 +215,33 @@ class AdminFormTest extends UnitTestCase {
    */
   public function testSaveSettingsForm() {
     $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
-    $config = $this->configFactory->get('mailsystem.settings');
+    $config = $this->configFactory->getEditable('mailsystem.settings');
     $form = array();
 
     // Global configuration.
-    $form_state = array(
-      'values' => array(
-        'mailsystem' => array(
-          'default_formatter' => 'mailsystem_test',
-          'default_sender' => 'mailsystem_demo',
-          'default_theme' => 'test_theme',
-        ),
+    $form_state = new FormState();
+    $form_state->setValues(array(
+      'mailsystem' => array(
+        'default_formatter' => 'mailsystem_test',
+        'default_sender' => 'mailsystem_demo',
+        'default_theme' => 'test_theme',
       ),
-    );
+    ));
     $adminForm->submitForm($form, $form_state);
     $this->assertEquals('mailsystem_test', $config->get('defaults.formatter'), 'Default formatter changed');
     $this->assertEquals('mailsystem_demo', $config->get('defaults.sender'), 'Default sender changed');
     $this->assertEquals('test_theme', $config->get('defaults.theme'), 'Default theme changed');
 
     // Override a custom module setting with no mail key.
-    $form_state = array(
-      'values' => array(
+    $form_state = new FormState();
+    $form_state->setValues(array(
         'custom' => array(
           'custom_module' => 'module_one',
           'custom_module_key' => 'mail_key',
           'custom_formatter' => 'mailsystem_test',
           'custom_sender' => 'mailsystem_demo',
         ),
-      ),
+      )
     );
     $adminForm->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_one.mail_key';
@@ -249,15 +249,15 @@ class AdminFormTest extends UnitTestCase {
     $this->assertEquals('mailsystem_demo', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module one sender changed');
 
     // Override a custom module setting with a mail key and no sender.
-    $form_state = array(
-      'values' => array(
+    $form_state = new FormState();
+    $form_state->setValues(array(
         'custom' => array(
           'custom_module' => 'module_two',
           'custom_module_key' => '',
           'custom_formatter' => 'mailsystem_test',
           'custom_sender' => 'none',
         ),
-      ),
+      )
     );
     $adminForm->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_two.none';
@@ -265,15 +265,15 @@ class AdminFormTest extends UnitTestCase {
     $this->assertEquals(NULL, $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module two with no key sender changed to nothing');
 
     // Add a custom module setting with a mail key and no sender.
-    $form_state = array(
-      'values' => array(
+    $form_state = new FormState();
+    $form_state->setValues(array(
         'custom' => array(
           'custom_module' => 'module_three',
           'custom_module_key' => 'mail_key',
           'custom_formatter' => 'none',
           'custom_sender' => 'mailsystem_test',
         ),
-      ),
+      )
     );
     $adminForm->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_three.mail_key';
@@ -281,15 +281,15 @@ class AdminFormTest extends UnitTestCase {
     $this->assertEquals('mailsystem_test', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module three sender added');
 
     // Clear the configuration for some modules.
-    $form_state = array(
-      'values' => array(
+    $form_state = new FormState();
+    $form_state->setValues(array(
         'custom' => array(
           'modules' => array(
             'module_two' => 'module_two',
             'module_one' => 'not_clean',
           ),
         ),
-      ),
+      )
     );
     $adminForm->submitForm($form, $form_state);
     $this->assertEquals('mailsystem_test', $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_three.mail_key.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'After clean, module three exists');

@@ -53,7 +53,10 @@ class MailsystemManagerTest extends UnitTestCase {
       ),
     ));
 
-    $this->mailManager = new MailsystemManager($this->getMock('\Traversable'), $this->getMock('\Drupal\Core\Cache\CacheBackendInterface'), $this->getMock('\Drupal\Core\Language\LanguageManagerInterface'), $this->getMock('\Drupal\Core\Extension\ModuleHandlerInterface'), $this->configFactory);
+    $logger_factory = $this->getMock('Drupal\Core\Logger\LoggerChannelFactoryInterface');
+    $string_translation = $this->getMock('Drupal\Core\StringTranslation\TranslationInterface');
+
+    $this->mailManager = new MailsystemManager($this->getMock('\Traversable'), $this->getMock('\Drupal\Core\Cache\CacheBackendInterface'), $this->getMock('\Drupal\Core\Extension\ModuleHandlerInterface'), $this->configFactory, $logger_factory, $string_translation);
   }
 
   public function testGetInstances_Default() {
