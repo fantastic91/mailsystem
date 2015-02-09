@@ -7,11 +7,14 @@
 
 namespace Drupal\mailsystem;
 
+use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
+use Drupal\Component\Utility\String;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Mail\MailInterface;
 use Drupal\Core\Mail\MailManager;
 use Drupal\Core\StringTranslation\TranslationInterface;
 
@@ -94,7 +97,7 @@ class MailsystemManager extends MailManager {
     // If there is no instance cached, try to create one.
     if (empty($this->instances[$plugin_id])) {
       $plugin = $this->createInstance($plugin_id);
-      if ($plugin instanceof \Drupal\Core\Mail\MailInterface) {
+      if ($plugin instanceof MailInterface) {
         $this->instances[$plugin_id] = $plugin;
       }
       else {
