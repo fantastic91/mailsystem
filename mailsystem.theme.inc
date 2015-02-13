@@ -49,6 +49,7 @@ function mailsystem_theme_theme_registry_alter(&$theme_registry) {
         }
 
         // Get the theme_registry cache.
+        // @todo replace with something like $cache = \Drupal::service('theme.registry')->get();
         $cache = _theme_load_registry($theme, $base_theme, $theme_engine);
 
         // Change the registry for hooks with a 'mail theme' element.
