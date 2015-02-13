@@ -4,13 +4,15 @@
  * Copy of drupal_html_to_text improvements from issue #299138.
  */
 
+use Drupal\Core\Site\Settings;
+
 /**
  * Perform format=flowed soft wrapping for mail (RFC 3676).
  *
  * We use delsp=yes wrapping, but only break non-spaced languages when
  * absolutely necessary to avoid compatibility issues.
  *
- * We deliberately use variable_get('mail_line_endings', MAIL_LINE_ENDINGS)
+ * We deliberately use Settings::get('mail_line_endings', PHP_EOL)
  * rather than "\r\n".
  *
  * @param $text
@@ -44,7 +46,7 @@ function mailsystem_wrap_mail($text, array $options = array()) {
       'max' => 80,
       'stuff' => TRUE,
       'hard' => FALSE,
-      'eol' => variable_get('mail_line_endings', MAIL_LINE_ENDINGS),
+      'eol' => Settings::get('mail_line_endings', PHP_EOL),
     );
   }
   $options += $defaults;
@@ -75,7 +77,7 @@ function mailsystem_wrap_mail($text, array $options = array()) {
  * The output will be suitable for use as 'format=flowed; delsp=yes' text
  * (RFC 3676) and can be passed directly to drupal_mail() for sending.
  *
- * We deliberately use variable_get('mail_line_endings', MAIL_LINE_ENDINGS)
+ * We deliberately use Settings::get('mail_line_endings', PHP_EOL)
  * rather than "\r\n".
  *
  * This function provides suitable alternatives for the following tags:
@@ -101,7 +103,7 @@ function mailsystem_wrap_mail($text, array $options = array()) {
  * @see drupal_mail()
  */
 function mailsystem_html_to_text($string, $allowed_tags = NULL) {
-  $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
+  $eol = Settings::get('mail_line_endings', PHP_EOL);
   // Cache list of supported tags.
   static $supported_tags;
   if (!isset($supported_tags)) {
@@ -162,7 +164,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
   if (!isset($count)) {
     $count = 1;
   }
-  $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
+  $eol = Settings::get('mail_line_endings', PHP_EOL);
   if ($node->nodeType === XML_TEXT_NODE) {
     // For text nodes, we just copy the text content.
     $text = $node->textContent;
@@ -473,7 +475,7 @@ function _mailsystem_html_to_text(DOMNode $node, array $allowed_tags, array &$no
  * @see _mailsystem_html_to_text()
  */
 function _mailsystem_html_to_text_table(DOMNode $node, $allowed_tags = NULL, array &$notes = array(), $table_width = 80) {
-  $eol = variable_get('mail_line_endings', MAIL_LINE_ENDINGS);
+  $eol = Settings::get('mail_line_endings', PHP_EOL);
   $header = array();
   $footer = array();
   $body = array();
