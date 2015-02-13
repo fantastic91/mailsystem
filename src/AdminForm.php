@@ -6,7 +6,7 @@
 
 /**
  * @todo What is the "theme" for?
- *       I not get the use of this from the old code.
+ *       I don't get the use of this from the old code.
  */
 
 namespace Drupal\mailsystem;
@@ -35,6 +35,15 @@ class AdminForm extends ConfigFormBase {
    * @var \Drupal\Core\Extension\ThemeHandlerInterface
    */
   protected $themeHandler;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function getEditableConfigNames() {
+    return [
+      'mailsystem.settings',
+    ];
+  }
 
   /**
    * Constructs a \Drupal\system\ConfigFormBase object.
