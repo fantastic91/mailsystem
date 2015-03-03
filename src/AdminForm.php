@@ -16,8 +16,8 @@ use Drupal\Core\Extension\ModuleHandlerInterface;
 use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
-use Symfony\Component\HttpFoundation\Request;
 
 class AdminForm extends ConfigFormBase {
 
@@ -35,15 +35,6 @@ class AdminForm extends ConfigFormBase {
    * @var \Drupal\Core\Extension\ThemeHandlerInterface
    */
   protected $themeHandler;
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEditableConfigNames() {
-    return [
-      'mailsystem.settings',
-    ];
-  }
 
   /**
    * Constructs a \Drupal\system\ConfigFormBase object.
@@ -91,11 +82,11 @@ class AdminForm extends ConfigFormBase {
     $config = $this->config('mailsystem.settings');
 
     $arguments = array(
-      '!interface' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8'),
+      '!interface' => Url::fromUri('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/interface/MailInterface/8')->toString(),
       '@interface' => '\Drupal\Core\Mail\MailInterface',
-      '!format' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8'),
+      '!format' => Url::fromUri('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Aformat/8')->toString(),
       '@format' => 'format()',
-      '!mail' => _url('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8'),
+      '!mail' => Url::fromUri('https://api.drupal.org/api/drupal/core!lib!Drupal!Core!Mail!MailInterface.php/function/MailInterface%3A%3Amail/8')->toString(),
       '@mail' => 'mail()',
     );
 
