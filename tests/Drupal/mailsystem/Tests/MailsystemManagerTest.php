@@ -20,11 +20,13 @@ class MailsystemManagerTest extends UnitTestCase {
   /**
    * Stores the configuration factory to test with.
    *
-   * @var \PHPUnit_Framework_MockObject_MockBuilder
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
 
   /**
+   * The mailsystem manager.
+   *
    * @var \Drupal\mailsystem\MailsystemManager
    */
   protected $mailManager;
@@ -41,14 +43,18 @@ class MailsystemManagerTest extends UnitTestCase {
           MailsystemManager::MAILSYSTEM_TYPE_SENDING => 'mailsystem_test',
         ),
         MailsystemManager::MAILSYSTEM_MODULES_CONFIG => array(
-          'module1' => array('none' => array(
-            MailsystemManager::MAILSYSTEM_TYPE_FORMATTING => 'mailsystem_test',
-            MailsystemManager::MAILSYSTEM_TYPE_SENDING => 'mailsystem_test',
-          )),
-          'module2' => array('mail_key' => array(
-            MailsystemManager::MAILSYSTEM_TYPE_FORMATTING => 'mailsystem_test',
-            MailsystemManager::MAILSYSTEM_TYPE_SENDING => 'mailsystem_test',
-          )),
+          'module1' => array(
+            'none' => array(
+              MailsystemManager::MAILSYSTEM_TYPE_FORMATTING => 'mailsystem_test',
+              MailsystemManager::MAILSYSTEM_TYPE_SENDING => 'mailsystem_test',
+            )
+          ),
+          'module2' => array(
+            'mail_key' => array(
+              MailsystemManager::MAILSYSTEM_TYPE_FORMATTING => 'mailsystem_test',
+              MailsystemManager::MAILSYSTEM_TYPE_SENDING => 'mailsystem_test',
+            )
+          ),
         ),
       ),
     ));

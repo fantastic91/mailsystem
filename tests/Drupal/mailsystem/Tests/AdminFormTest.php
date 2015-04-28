@@ -22,21 +22,27 @@ class AdminFormTest extends UnitTestCase {
   /**
    * Stores the configuration factory to test with.
    *
-   * @var \PHPUnit_Framework_MockObject_MockBuilder
+   * @var \Drupal\Core\Config\ConfigFactoryInterface
    */
   protected $configFactory;
 
   /**
-   * @var MailsystemManager
+   * The mail system manager.
+   *
+   * @var \Drupal\mailsystem\MailsystemManager
    */
   protected $mailManager;
 
   /**
+   * The module handler.
+   *
    * @var \Drupal\Core\Extension\ModuleHandlerInterface
    */
   protected $moduleHandler;
 
   /**
+   * The theme handler.
+   *
    * @var \Drupal\Core\Extension\ThemeHandlerInterface
    */
   protected $themeHandler;
@@ -50,7 +56,7 @@ class AdminFormTest extends UnitTestCase {
     unset($methods[array_search('set', $methods)]);
     unset($methods[array_search('get', $methods)]);
     unset($methods[array_search('clear', $methods)]);
-    $configMock = $this->getMockBuilder('Drupal\Core\Config\Config')
+    $config_mock = $this->getMockBuilder('Drupal\Core\Config\Config')
       ->disableOriginalConstructor()
       ->setMethods($methods)
       ->getMock();
@@ -59,15 +65,15 @@ class AdminFormTest extends UnitTestCase {
     $this->configFactory = $this->getMock('Drupal\Core\Config\ConfigFactoryInterface');
     $this->configFactory->expects($this->any())
       ->method('getEditable')
-      ->will($this->returnValue($configMock));
+      ->will($this->returnValue($config_mock));
 
-    // Create a MailsystemManager mock
+    // Create a MailsystemManager mock.
     $this->mailManager = $this->getMock('\Drupal\mailsystem\MailsystemManager', array(), array(), '', FALSE);
     $this->mailManager->expects($this->any())
       ->method('getDefinition')
       ->will($this->returnValueMap(array(
-        array('mailsystem_test', array('label' => 'Test Mail-Plugin')),
-        array('mailsystem_demo', array('label' => 'Demo Mail-Plugin')),
+        array('mailsystem_test', TRUE, array('label' => 'Test Mail-Plugin')),
+        array('mailsystem_demo', TRUE, array('label' => 'Demo Mail-Plugin')),
       )));
     $this->mailManager->expects($this->any())
       ->method('getDefinitions')
@@ -92,18 +98,18 @@ class AdminFormTest extends UnitTestCase {
     $this->themeHandler->expects($this->any())
       ->method('listInfo')
       ->will($this->returnValue(array(
-        'test_theme' => (object)array(
-            'status' => 1,
-            'info' => array('name' => 'test theme name'),
-          ),
-        'demo_theme' => (object)array(
-            'status' => 1,
-            'info' => array('name' => 'test theme name demo'),
-          ),
-        'inactive_theme' => (object)array(
-            'status' => 0,
-            'info' => array('name' => 'inactive test theme'),
-          ),
+        'test_theme' => (object) array(
+          'status' => 1,
+          'info' => array('name' => 'test theme name'),
+        ),
+        'demo_theme' => (object) array(
+          'status' => 1,
+          'info' => array('name' => 'test theme name demo'),
+        ),
+        'inactive_theme' => (object) array(
+          'status' => 0,
+          'info' => array('name' => 'inactive test theme'),
+        ),
       )));
 
     // Inject a language-manager into \Drupal.
@@ -124,11 +130,12 @@ class AdminFormTest extends UnitTestCase {
    * @param object $obj
    *   Object to invoke a method on.
    * @param string $fnc
-   *   Function name to invoke
-   * @param array  $args
+   *   Function name to invoke.
+   * @param array $args
    *   Optional array with arguments passing to the method.
    *
    * @return mixed
+   *   The method result.
    */
   protected function invokeMethod($obj, $fnc, array $args = array()) {
     $class = new \ReflectionClass($obj);
@@ -141,8 +148,8 @@ class AdminFormTest extends UnitTestCase {
    * Testing if MailPlugin modules are loaded correctly.
    */
   public function testCollectModules() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
-    $list = $this->invokeMethod($adminForm, 'getModulesList');
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $list = $this->invokeMethod($admin_form, 'getModulesList');
 
     $this->assertTrue(array_key_exists('none', $list), 'Option "none" exists');
     $this->assertEquals(3, count($list), 'List holds 3 mock modules');
@@ -153,12 +160,12 @@ class AdminFormTest extends UnitTestCase {
    * Testing if the label from a plugin is returned valid.
    */
   public function testCollectPluginLabels() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
 
-    $label = $this->invokeMethod($adminForm, 'getPluginLabel', array('mailsystem_test'));
+    $label = $this->invokeMethod($admin_form, 'getPluginLabel', array('mailsystem_test'));
     $this->assertEquals('Test Mail-Plugin', $label, 'Valid label for test plugin');
 
-    $label = $this->invokeMethod($adminForm, 'getPluginLabel', array('mailsystem_demo'));
+    $label = $this->invokeMethod($admin_form, 'getPluginLabel', array('mailsystem_demo'));
     $this->assertEquals('Demo Mail-Plugin', $label, 'Valid label for demo plugin');
   }
 
@@ -166,8 +173,8 @@ class AdminFormTest extends UnitTestCase {
    * Testing the collection of all themes.
    */
   public function testCollectThemes() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
-    $list = $this->invokeMethod($adminForm, 'getThemesList');
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $list = $this->invokeMethod($admin_form, 'getThemesList');
 
     $this->assertEquals(4, count($list), 'Four entries in the theme list. Two themes, default and none');
     $this->assertTrue(array_key_exists('default', $list), '"Default" theme key exists');
@@ -179,16 +186,16 @@ class AdminFormTest extends UnitTestCase {
    * Testing the collection of all sender plugins.
    */
   public function testCollectSenderPlugins() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
 
     // Include the "-- Select --" entry.
-    $list = $this->invokeMethod($adminForm, 'getSenderPlugins', array(TRUE));
+    $list = $this->invokeMethod($admin_form, 'getSenderPlugins', array(TRUE));
     $this->assertEquals(3, count($list), 'Two plugins and one select entry');
     $this->assertEquals('Test Mail-Plugin', $list['mailsystem_test'], 'The label of the test plugin matches');
     $this->assertEquals('Demo Mail-Plugin', $list['mailsystem_demo'], 'The label of the demo plugin matches');
 
     // Without the "-- Select --" entry.
-    $list = $this->invokeMethod($adminForm, 'getSenderPlugins');
+    $list = $this->invokeMethod($admin_form, 'getSenderPlugins');
     $this->assertEquals(2, count($list), 'Two plugins and one select entry');
   }
 
@@ -196,25 +203,26 @@ class AdminFormTest extends UnitTestCase {
    * Testing the collection of all formatter plugins.
    */
   public function testCollectFormatterPlugins() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
 
     // Include the "-- Select --" entry.
-    $list = $this->invokeMethod($adminForm, 'getFormatterPlugins', array(TRUE));
+    $list = $this->invokeMethod($admin_form, 'getFormatterPlugins', array(TRUE));
     $this->assertEquals(3, count($list), 'Two plugins and one select entry');
     $this->assertEquals('Test Mail-Plugin', $list['mailsystem_test'], 'The label of the test plugin matches');
     $this->assertEquals('Demo Mail-Plugin', $list['mailsystem_demo'], 'The label of the demo plugin matches');
 
     // Without the "-- Select --" entry.
-    $list = $this->invokeMethod($adminForm, 'getFormatterPlugins');
+    $list = $this->invokeMethod($admin_form, 'getFormatterPlugins');
     $this->assertEquals(2, count($list), 'Two plugins and one select entry');
   }
 
   /**
-   * Testing the form save function and if the values are stored correctly in
-   * in the configuration.
+   * Testing the form save function of the values.
+   *
+   * Checking that values are stored correctly in the configuration.
    */
   public function testSaveSettingsForm() {
-    $adminForm = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
+    $admin_form = new AdminForm($this->configFactory, $this->mailManager, $this->moduleHandler, $this->themeHandler);
     $config = $this->configFactory->getEditable('mailsystem.settings');
     $form = array();
 
@@ -227,7 +235,7 @@ class AdminFormTest extends UnitTestCase {
         'default_theme' => 'test_theme',
       ),
     ));
-    $adminForm->submitForm($form, $form_state);
+    $admin_form->submitForm($form, $form_state);
     $this->assertEquals('mailsystem_test', $config->get('defaults.formatter'), 'Default formatter changed');
     $this->assertEquals('mailsystem_demo', $config->get('defaults.sender'), 'Default sender changed');
     $this->assertEquals('test_theme', $config->get('defaults.theme'), 'Default theme changed');
@@ -243,7 +251,7 @@ class AdminFormTest extends UnitTestCase {
         ),
       )
     );
-    $adminForm->submitForm($form, $form_state);
+    $admin_form->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_one.mail_key';
     $this->assertEquals('mailsystem_test', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_FORMATTING), 'Module one formatter changed');
     $this->assertEquals('mailsystem_demo', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module one sender changed');
@@ -259,7 +267,7 @@ class AdminFormTest extends UnitTestCase {
         ),
       )
     );
-    $adminForm->submitForm($form, $form_state);
+    $admin_form->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_two.none';
     $this->assertEquals('mailsystem_test', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_FORMATTING), 'Module two with no key formatter changed');
     $this->assertEquals(NULL, $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module two with no key sender changed to nothing');
@@ -275,7 +283,7 @@ class AdminFormTest extends UnitTestCase {
         ),
       )
     );
-    $adminForm->submitForm($form, $form_state);
+    $admin_form->submitForm($form, $form_state);
     $base = MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_three.mail_key';
     $this->assertEquals(NULL, $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_FORMATTING), 'Module three no formatter added');
     $this->assertEquals('mailsystem_test', $config->get($base . '.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'Module three sender added');
@@ -291,7 +299,7 @@ class AdminFormTest extends UnitTestCase {
         ),
       )
     );
-    $adminForm->submitForm($form, $form_state);
+    $admin_form->submitForm($form, $form_state);
     $this->assertEquals('mailsystem_test', $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_three.mail_key.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'After clean, module three exists');
     $this->assertEquals('mailsystem_demo', $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_one.mail_key.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'After clean, module one exists');
     $this->assertEquals(NULL, $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_two'), 'After clean, module two does not exists');
