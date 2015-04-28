@@ -66,8 +66,8 @@ class AdminFormTest extends UnitTestCase {
     $this->mailManager->expects($this->any())
       ->method('getDefinition')
       ->will($this->returnValueMap(array(
-        array('mailsystem_test', array('label' => 'Test Mail-Plugin')),
-        array('mailsystem_demo', array('label' => 'Demo Mail-Plugin')),
+        array('mailsystem_test', TRUE, array('label' => 'Test Mail-Plugin')),
+        array('mailsystem_demo', TRUE, array('label' => 'Demo Mail-Plugin')),
       )));
     $this->mailManager->expects($this->any())
       ->method('getDefinitions')
