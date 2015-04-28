@@ -73,7 +73,7 @@ class AdapterTest extends UnitTestCase {
   }
 
   /**
-   * test for successful and failed sending of a message through the Adapter.
+   * Test for successful and failed sending of a message through the Adapter.
    */
   public function testSending() {
     $message = $this->getEmptyMessage();

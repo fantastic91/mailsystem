@@ -395,14 +395,14 @@ class AdminForm extends ConfigFormBase {
   /**
    * Returns a label from a mail plugin.
    *
-   * @param string $module
-   *   A module name to the the label from.
+   * @param string $plugin_id
+   *   The plugin ID.
    *
    * @return string
    *   The label from a mail plugin.
    */
-  protected function getPluginLabel($module) {
-    $definition = $this->mailManager->getDefinition($module);
+  protected function getPluginLabel($plugin_id) {
+    $definition = $this->mailManager->getDefinition($plugin_id);
     return isset($definition['label']) ? $definition['label'] : $this->t('Unknown Plugin');
   }
 
