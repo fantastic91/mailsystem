@@ -8,7 +8,7 @@
 namespace Drupal\mailsystem;
 
 use Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException;
-use Drupal\Component\Utility\String;
+use Drupal\Component\Utility\SafeMarkup;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -102,7 +102,7 @@ class MailsystemManager extends MailManager {
       }
       else {
         throw new InvalidPluginDefinitionException($plugin_id,
-          String::format('Class %class does not implement interface %interface',
+          SafeMarkup::format('Class %class does not implement interface %interface',
             array('%class' => get_class($plugin), '%interface' => 'Drupal\Core\Mail\MailInterface')
           )
         );
