@@ -8,7 +8,7 @@ namespace Drupal\Tests\mailsystem\Unit;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Form\FormState;
-use Drupal\mailsystem\AdminForm;
+use Drupal\mailsystem\Form\AdminForm;
 use Drupal\mailsystem\MailsystemManager;
 use Drupal\Tests\UnitTestCase;
 

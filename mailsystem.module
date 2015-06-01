@@ -14,10 +14,10 @@ function mailsystem_theme_registry_alter(&$theme_registry) {
 }
 
 /**
-* Retrieves the key of the theme used to render the emails.
-*
-* @todo Add some kind of hook to let other modules alter this behavior.
-*/
+ * Retrieves the key of the theme used to render the emails.
+ *
+ * @todo Add some kind of hook to let other modules alter this behavior.
+ */
 function mailsystem_get_mail_theme() {
   $theme_key = \Drupal::theme()->getActiveTheme()->getName();
   $config = \Drupal::config('mailsystem.settings');

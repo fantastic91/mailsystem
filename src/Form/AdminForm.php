@@ -1,10 +1,10 @@
 <?php
 /**
  * @file
- * Contains \Drupal\mailsystem\AdminForm.
+ * Contains \Drupal\mailsystem\Form\AdminForm.
  */
 
-namespace Drupal\mailsystem;
+namespace Drupal\mailsystem\Form;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -12,6 +12,7 @@ use Drupal\Core\Extension\ThemeHandlerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
+use Drupal\mailsystem\MailsystemManager;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
