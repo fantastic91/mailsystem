@@ -1,10 +1,10 @@
 <?php
 /**
-* @file
-* Contains \Drupal\mailsystem\Plugin\mailsystem\Dummy.
-*/
+ * @file
+ * Contains \Drupal\mailsystem_test\Plugin\Mail\DummySender.
+ */
 
-namespace Drupal\mailsystem\Plugin\Mail;
+namespace Drupal\mailsystem_test\Plugin\Mail;
 
 use Drupal\Core\Mail\MailInterface;
 
@@ -37,4 +37,5 @@ class DummySender implements MailInterface {
     ), 'DummySender: mail()');
     return $message;
   }
+
 }

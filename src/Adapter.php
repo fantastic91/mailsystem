@@ -49,4 +49,5 @@ class Adapter implements MailInterface {
   public function mail(array $message) {
     return $this->instanceSender->mail($message);
   }
+
 }

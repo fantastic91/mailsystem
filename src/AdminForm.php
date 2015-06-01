@@ -1,12 +1,7 @@
 <?php
 /**
-* @file
-* Contains \Drupal\mailsystem\AdminForm.
-*/
-
-/**
- * @todo What is the "theme" for?
- *       I don't get the use of this from the old code.
+ * @file
+ * Contains \Drupal\mailsystem\AdminForm.
  */
 
 namespace Drupal\mailsystem;
@@ -19,6 +14,9 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
+/**
+ * Mail System settings form.
+ */
 class AdminForm extends ConfigFormBase {
 
   /**
@@ -160,8 +158,7 @@ class AdminForm extends ConfigFormBase {
     );
 
     // Get all configured modules and show them in a list.
-    $modules = $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG);
-    $modules = is_null($modules) ? array() : $modules;
+    $modules = $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG) ?: [];
     $options = array();
     foreach ($modules as $module => $conf) {
       if (is_array($conf)) {

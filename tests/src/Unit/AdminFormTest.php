@@ -1,10 +1,10 @@
 <?php
 /**
  * @file
- * Contains \Drupal\mailsystem\Tests\AdminFormTest.
+ * Contains \Drupal\Tests\mailsystem\Unit\AdminFormTest.
  */
 
-namespace Drupal\mailsystem\Tests;
+namespace Drupal\Tests\mailsystem\Unit;
 
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\Core\Form\FormState;
@@ -304,4 +304,5 @@ class AdminFormTest extends UnitTestCase {
     $this->assertEquals('mailsystem_demo', $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_one.mail_key.' . MailsystemManager::MAILSYSTEM_TYPE_SENDING), 'After clean, module one exists');
     $this->assertEquals(NULL, $config->get(MailsystemManager::MAILSYSTEM_MODULES_CONFIG . '.module_two'), 'After clean, module two does not exists');
   }
+
 }

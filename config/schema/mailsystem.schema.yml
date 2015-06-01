@@ -1,0 +1,17 @@
+mailsystem.settings:
+  type: mapping
+  label: Mail System settings
+  mapping:
+    theme:
+      type: string
+      label: Selected theme
+    defaults:
+      type: mapping
+      label: Default settings
+      mapping:
+        sender:
+          type: string
+          label: The sender of an email
+        formatter:
+          type: string
+          label: The formatter used for emails

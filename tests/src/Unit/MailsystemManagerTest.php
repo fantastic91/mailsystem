@@ -1,13 +1,11 @@
 <?php
 /**
  * @file
- * Contains \Drupal\mailsystem\Tests\MailsystemManagerTest.
+ * Contains \Drupal\Tests\mailsystem\Unit\MailsystemManagerTest.
  */
 
-namespace Drupal\mailsystem\Tests;
+namespace Drupal\Tests\mailsystem\Unit;
 
-use Drupal\Core\DependencyInjection\ContainerBuilder;
-use Drupal\mailsystem\AdminForm;
 use Drupal\mailsystem\MailsystemManager;
 use Drupal\Tests\UnitTestCase;
 
@@ -68,4 +66,5 @@ class MailsystemManagerTest extends UnitTestCase {
   public function testGetInstances_Default() {
 
   }
+
 }

@@ -1,7 +1,6 @@
 package: 'Mail'
 name: 'Mail System'
 description: 'Provides a user interface for per-module and site-wide mail_system selection.'
-php: 5.3
 type: module
 core: 8.x
 configure: mailsystem.config

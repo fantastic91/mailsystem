@@ -1,13 +1,13 @@
 <?php
 /**
  * @file
- * Contains \Drupal\mailsystem\Tests\AdapterTest.
+ * Contains \Drupal\Tests\mailsystem\Unit\AdapterTest.
  */
 
-namespace Drupal\mailsystem\Tests;
+namespace Drupal\Tests\mailsystem\Unit;
 
+use Drupal\Core\Mail\MailInterface;
 use Drupal\mailsystem\Adapter;
-use Drupal\mailsystem\Plugin\Mail\Test;
 use Drupal\Tests\UnitTestCase;
 
 /**
@@ -27,14 +27,14 @@ class AdapterTest extends UnitTestCase {
   /**
    * Sender plugin instance.
    *
-   * @var \Drupal\mailsystem\Plugin\Mail\Test
+   * @var \Drupal\mailsystem_test\Plugin\Mail\Test
    */
   protected $sender;
 
   /**
    * Formatter plugin instance.
    *
-   * @var \Drupal\mailsystem\Plugin\Mail\Test
+   * @var \Drupal\mailsystem_test\Plugin\Mail\Test
    */
   protected $formatter;
 
@@ -83,4 +83,34 @@ class AdapterTest extends UnitTestCase {
     $message['subject'] = Test::SEND_SUCCESS_SUBJECT;
     $this->assertTrue($this->adapter->mail($message), 'Sending message successful as expected');
   }
+}
+
+/**
+ * Provides a test plugin to send emails.
+ */
+class Test implements MailInterface {
+  const TEST_SUBJECT = 'Subject';
+  const TEST_BODY = 'Vivamus varius commodo leo at eleifend. Nunc vestibulum dolor eget turpis pulvinar volutpat.';
+  const TEST_HEADER_NAME = 'X-System';
+  const TEST_HEADER_VALUE = 'D8 PHP Unit test';
+  const SEND_SUCCESS_SUBJECT = 'Failed';
+
+  /**
+   * {@inheritdoc}
+   */
+  public function format(array $message) {
+    return array(
+      'subject' => self::TEST_SUBJECT,
+      'body' => self::TEST_BODY,
+      'headers' => array(self::TEST_HEADER_NAME => self::TEST_HEADER_VALUE),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function mail(array $message) {
+    return ($message['subject'] == self::SEND_SUCCESS_SUBJECT);
+  }
+
 }

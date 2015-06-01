@@ -6,19 +6,6 @@
  */
 
 /**
- * Implements hook_menu_link_defaults().
- */
-function mailsystem_menu_link_defaults() {
-  $items['mailsystem.settings'] = array(
-    'link_title' => 'Mail System',
-    'route_name' => 'mailsystem.settings',
-    'description' => 'Configure per-module Mail System settings.',
-    'parent' => 'system.admin.config.system',
-  );
-  return $items;
-}
-
-/**
 * Implements hook_theme_registry_alter().
 */
 function mailsystem_theme_registry_alter(&$theme_registry) {

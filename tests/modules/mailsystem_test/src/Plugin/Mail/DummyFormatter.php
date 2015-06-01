@@ -1,10 +1,10 @@
 <?php
 /**
-* @file
-* Contains \Drupal\mailsystem\Plugin\mailsystem\Dummy.
-*/
+ * @file
+ * Contains \Drupal\mailsystem_test\Plugin\Mail\DummyFormatter.
+ */
 
-namespace Drupal\mailsystem\Plugin\Mail;
+namespace Drupal\mailsystem_test\Plugin\Mail;
 
 use Drupal\Core\Mail\MailInterface;
 
@@ -38,4 +38,5 @@ class DummyFormatter implements MailInterface {
   public function mail(array $message) {
     return FALSE;
   }
+
 }
